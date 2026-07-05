@@ -6,6 +6,8 @@ Over-representation pathway analysis for differential expression results. Given 
 
 **Part of the OMIX analysis suite** - A collection of genomics tools for reproducible bioinformatics workflows.
 
+**Version Information**: Each run logs R version, l2p package version (0.0.14), l2psupp package version (0.0.14), and MSigDB database version for reproducibility tracking.
+
 ## Description
 
 L2P (List to pathways) performs over-representation analysis to identify biological pathways that are significantly enriched in your differentially expressed genes. The analysis:
@@ -55,10 +57,12 @@ Attach a data asset containing differential expression results with:
 
 If your data uses non-standard column names, override auto-detection:
 
-- **Gene Name Column**: e.g., "HGNC_Symbol", "gene_id"
-- **Ranking Column**: e.g., "logFC", "stat"  
+- **Gene Names Column**: e.g., "HGNC_Symbol", "gene_id" (harmonized parameter name; plural form matches Multi tool)
+- **Ranking Column (T-Statistic Column)**: e.g., "logFC", "stat" (more explicit name than generic "ranking column")
 - **Significance Column**: e.g., "padj", "FDR"
 - **Fold Change Column**: e.g., "log2FC", "foldChange"
+
+*Note: Parameter names `gene_names_column` and `t_statistic_column` have been harmonized with L2P Multi for consistency across the OMIX suite.*
 
 #### Gene Selection Methods
 
@@ -159,6 +163,10 @@ Multi-panel figure with:
 
 ## Version History
 
+- **v1.1** (2025-03): 
+  - Added MSigDB version logging to run outputs for improved reproducibility tracking
+  - Harmonized parameter names with L2P Multi: `gene_names_column` (plural) and `t_statistic_column` (explicit)
+  - Fixed optparse default value handling for comparison parameter
 - **v1.0**: Initial release with progressive disclosure UI and smart column detection
 
 ---

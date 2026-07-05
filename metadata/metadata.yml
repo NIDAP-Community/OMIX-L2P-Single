@@ -1,10 +1,11 @@
 metadata_version: 1
-name: OMIX L2P Analysis (Single)
-description: List to pathways (L2P) over-representation analysis for differential
-  expression results. Uses Fisher's exact test to identify enriched pathways in gene
+name: OMIX L2P Pathway Analysis (Single)
+description: 'List to pathways (L2P) over-representation analysis for differential
+  expression results. Uses Fisher''s exact test to identify enriched pathways in gene
   lists. Supports multiple pathway collections (GO, REACTOME, KEGG, MSigDB) and species
   via ortholog mapping. Generates bubble plots and bar charts with customizable visualization
-  options. Part of the OMIX analysis suite.
+  options. Part of the OMIX analysis suite. v1.1: Enhanced reproducibility tracking
+  with version logging; harmonized parameters with L2P Multi.'
 tags:
 - OMIX
 - L2P

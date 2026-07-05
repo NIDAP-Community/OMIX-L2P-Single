@@ -3,8 +3,7 @@
 #' @description
 #' Over-representation Analysis. Given a genelist, finds over-represented
 #' pathways with Fisher's exact test, using the l2p package. Requires as input a
-#' dataset with differential expression of genes (DEG). Final Potomac Compatible
-#' Version: v97. Final Sugarloaf V1: v125. View Documentation
+#' dataset with differential expression of genes (DEG).
 #'
 #' @details
 #' Contact CCBR at \email{NCICCBRNIDAP@@mail.nih.gov} if you encounter problems.
@@ -13,16 +12,18 @@
 #' A data frame. Dataset containing differential expression of genes. Should
 #' contain a column with gene name, (log) fold change and p-value /
 #' t-statistic.
-#' @param gene_name_column Character. Column containing gene names
+#' @param gene_names_column Character. Column containing gene names. If omitted
+#' and the table has a common gene column name such as \code{Gene}, it is
+#' inferred.
 #' @param comparison
 #' Character. Optional comparison ID such as \code{B-A}. When supplied, missing
 #' column selections are derived as \code{B-A_tstat}, \code{B-A_pval}, and
 #' \code{B-A_FC}. Explicit column parameters override derived columns.
-#' @param column_used_to_rank_genes
+#' @param t_statistic_column
 #' Character. If "Select By Rank" (above) is TRUE, set a single column used to
 #' select the genes of interest. This is usually the column containing
-#' t-statistic, or another measure of differential expression. Please select
-#' ONLY ONE t-statistic column.
+#' t-statistic, or another signed ranking statistic. This is the singular
+#' version of the L2P Multi \code{t_statistic_columns} parameter.
 #' @param significance_column
 #' Character. If "Select By Rank" is FALSE, then choose a single column
 #' containing p-values or adjusted p-values other significance metrics upon
@@ -47,6 +48,16 @@
 #' sets C6: MSigDB oncogenic gene sets C7: MSigDB immunologic gene sets C8:
 #' MSigDB cell type signature gene sets Default:
 #' \code{c("GO","REACTOME","KEGG")}.
+#' @param custom_pathways
+#' Optional custom pathway database. May be a list in the format expected by
+#' \code{l2p(custompathways = ...)} or a long-format data frame with pathway
+#' names and gene symbols.
+#' @param custom_pathway_name_column
+#' Character. Column containing pathway names when \code{custom_pathways} is a
+#' data frame. Default: \code{gene_set_name}.
+#' @param custom_pathway_gene_column
+#' Character. Column containing gene symbols when \code{custom_pathways} is a
+#' data frame. Default: \code{gene_symbol}.
 #' @param select_by_rank
 #' Logical. If TRUE, your genes will be ranked by the column you select in the
 #' "Column Used to Rank Genes" parameter under the "Genelist selected by
@@ -154,12 +165,16 @@
 #' \code{ggplot2::ggsave}. Default: \code{12}.
 #' @param export_results_file
 #' Character. Optional output file path for saving the returned results as CSV.
-#' Defaults to \code{file.path(getwd(), "l2p_single_v148_results.csv")}. Set
-#' to \code{NULL} to disable results export.
+#' A companion provenance CSV is written with \code{_provenance} appended to
+#' the basename. Defaults to
+#' \code{file.path(getwd(), "l2p_single_v148_results.csv")}. Set to
+#' \code{NULL} to disable results and provenance export.
 #'
 #' @return A data frame of L2P pathway enrichment results for up- and
 #' downregulated gene sets, including pathway name, category, direction,
-#' hit counts, enrichment score, p-value, FDR, and gene lists.
+#' hit counts, enrichment score, p-value, FDR, and gene lists. When results are
+#' exported, run provenance is written to a companion \code{_provenance.csv}
+#' file.
 #'
 #' @importFrom dplyr .
 #' @importFrom ggplot2 .
@@ -170,13 +185,16 @@
 #' @export
 l2p_single <- function(
   deg_table,
-  gene_name_column,
-  column_used_to_rank_genes = NULL,
+  gene_names_column = NULL,
+  t_statistic_column = NULL,
   significance_column = NULL,
   fold_change_column = NULL,
   comparison = NULL,
   species = "Human",
   collections_to_include = c("GO", "REACTOME", "KEGG"),
+  custom_pathways = NULL,
+  custom_pathway_name_column = "gene_set_name",
+  custom_pathway_gene_column = "gene_symbol",
   select_by_rank = TRUE,
   select_top_percentage_of_genes = TRUE,
   select_top_genes = 500,
@@ -235,7 +253,7 @@ l2p_single <- function(
   check_gene_species_case <- function(deg_table, gene_column, species) {
     if (!gene_column %in% colnames(deg_table)) {
       stop(sprintf(
-        "ERROR: `gene_name_column` (%s) must exist in `deg_table`.",
+        "ERROR: `gene_names_column` (%s) must exist in `deg_table`.",
         gene_column
       ))
     }
@@ -330,6 +348,135 @@ l2p_single <- function(
     trimws(x)
   }
 
+  resolve_gene_names_column <- function(deg_table, gene_column) {
+    provided <- ""
+    if (
+      !is.null(gene_column) &&
+        length(gene_column) > 0 &&
+        !is.na(gene_column[[1]])
+    ) {
+      provided <- trimws(as.character(gene_column[[1]]))
+    }
+
+    if (nzchar(provided) && provided %in% colnames(deg_table)) {
+      return(provided)
+    }
+
+    if (nzchar(provided)) {
+      trimmed_match <- colnames(deg_table)[trimws(colnames(deg_table)) == provided]
+      if (length(trimmed_match) == 1) {
+        return(trimmed_match)
+      }
+
+      case_match <- colnames(deg_table)[tolower(colnames(deg_table)) == tolower(provided)]
+      if (length(case_match) == 1) {
+        warning(sprintf(
+          "Using gene column `%s`, matched case-insensitively from `%s`.",
+          case_match,
+          provided
+        ))
+        return(case_match)
+      }
+    }
+
+    if (!nzchar(provided)) {
+      common_gene_columns <- c(
+        "Gene",
+        "gene",
+        "GeneSymbol",
+        "gene_symbol",
+        "Gene_Symbol",
+        "symbol",
+        "Symbol",
+        "gene_name",
+        "Gene_Name",
+        "gene_names",
+        "Gene_Names",
+        "gene_id",
+        "GeneID",
+        "Gene_ID"
+      )
+      inferred <- common_gene_columns[common_gene_columns %in% colnames(deg_table)]
+      if (length(inferred) > 0) {
+        warning(sprintf(
+          "`gene_names_column` was not provided. Using inferred gene column `%s`.",
+          inferred[[1]]
+        ))
+        return(inferred[[1]])
+      }
+    }
+
+    available_columns <- paste(utils::head(colnames(deg_table), 30), collapse = ", ")
+    if (ncol(deg_table) > 30) {
+      available_columns <- paste0(available_columns, ", ...")
+    }
+    provided_label <- if (nzchar(provided)) provided else "NULL/empty"
+
+    stop(sprintf(
+      paste0(
+        "ERROR: `gene_names_column` must be provided and exist in `deg_table`. ",
+        "Received: %s. Available columns include: %s"
+      ),
+      provided_label,
+      available_columns
+    ))
+  }
+
+  is_log_fold_change_column <- function(x) {
+    grepl("logFC|log2FC|avg_log2FC", x)
+  }
+
+  build_custom_pathways_list <- function(
+    custom_pathways,
+    custom_pathway_name_column,
+    custom_pathway_gene_column
+  ) {
+    if (is.null(custom_pathways)) {
+      return(NULL)
+    }
+
+    if (is.data.frame(custom_pathways)) {
+      required_custom_cols <- c(
+        custom_pathway_name_column,
+        custom_pathway_gene_column
+      )
+      if (!all(required_custom_cols %in% colnames(custom_pathways))) {
+        missing_cols <- setdiff(required_custom_cols, colnames(custom_pathways))
+        stop(sprintf(
+          "ERROR: Missing columns in `custom_pathways`: %s",
+          paste(missing_cols, collapse = ", ")
+        ))
+      }
+
+      keep_custom_pathways <- !is.na(custom_pathways[[custom_pathway_name_column]]) &
+        !is.na(custom_pathways[[custom_pathway_gene_column]])
+      custom_pathways <- custom_pathways[keep_custom_pathways, , drop = FALSE]
+      split_pathways <- split(
+        as.character(custom_pathways[[custom_pathway_gene_column]]),
+        as.character(custom_pathways[[custom_pathway_name_column]])
+      )
+
+      return(Map(
+        function(pathway_name, genes) {
+          c(pathway_name, pathway_name, unique(genes))
+        },
+        names(split_pathways),
+        split_pathways
+      ))
+    }
+
+    if (is.list(custom_pathways)) {
+      return(custom_pathways)
+    }
+
+    stop(
+      paste0(
+        "ERROR: `custom_pathways` must be either a data frame or a list ",
+        "formatted for `l2p(custompathways = ...)`."
+      )
+    )
+  }
+
   ## -------------------------------- ##
   ## User-Defined Template Parameters ##
   ## -------------------------------- ##
@@ -337,16 +484,14 @@ l2p_single <- function(
   # Input validation and setup:
   species <- normalize_species_label(species)
 
-  if (!is.character(gene_name_column) || length(gene_name_column) != 1L) {
-    stop("`gene_name_column` must be a single column name (character scalar).")
-  }
-  check_gene_species_case(deg_table, gene_name_column, species)
+  gene_names_column <- resolve_gene_names_column(deg_table, gene_names_column)
+  check_gene_species_case(deg_table, gene_names_column, species)
 
   if (!optional_scalar(comparison)) {
     stop("ERROR: `comparison` must be a single non-empty value such as `B-A`.")
   }
-  if (!optional_scalar(column_used_to_rank_genes)) {
-    stop("ERROR: `column_used_to_rank_genes` must be a single column name.")
+  if (!optional_scalar(t_statistic_column)) {
+    stop("ERROR: `t_statistic_column` must be a single column name.")
   }
   if (!optional_scalar(significance_column)) {
     stop("ERROR: `significance_column` must be a single column name.")
@@ -357,8 +502,8 @@ l2p_single <- function(
 
   if (!is.null(comparison)) {
     comparison <- trimws(comparison)
-    if (is.null(column_used_to_rank_genes)) {
-      column_used_to_rank_genes <- paste0(comparison, "_tstat")
+    if (is.null(t_statistic_column)) {
+      t_statistic_column <- paste0(comparison, "_tstat")
     }
     if (is.null(significance_column)) {
       significance_column <- paste0(comparison, "_pval")
@@ -369,14 +514,14 @@ l2p_single <- function(
   }
 
   if (select_by_rank) {
-    column_used_to_rank_genes <- require_scalar(
-      column_used_to_rank_genes,
-      "column_used_to_rank_genes"
+    t_statistic_column <- require_scalar(
+      t_statistic_column,
+      "t_statistic_column"
     )
-    if (!column_used_to_rank_genes %in% colnames(deg_table)) {
+    if (!t_statistic_column %in% colnames(deg_table)) {
       stop(sprintf(
         "ERROR: Missing rank column in `deg_table`: %s",
-        column_used_to_rank_genes
+        t_statistic_column
       ))
     }
 
@@ -445,7 +590,11 @@ l2p_single <- function(
 
   if (select_by_rank == FALSE) {
     sigcol <- gsub("_pval|p_val_|_adjpval|p_val_adj_", "", significance_column)
-    fccol <- gsub("_FC|_logFC|avg_logFC_|avg_log2FC_", "", fold_change_column)
+    fccol <- gsub(
+      "_FC|_logFC|_log2FC|avg_logFC_|avg_log2FC_",
+      "",
+      fold_change_column
+    )
     if (sigcol != fccol) {
       stop(
         paste0(
@@ -457,6 +606,12 @@ l2p_single <- function(
       )
     }
   }
+
+  custom_pathways_list <- build_custom_pathways_list(
+    custom_pathways,
+    custom_pathway_name_column,
+    custom_pathway_gene_column
+  )
 
   ## --------- ##
   ## Libraries ##
@@ -479,6 +634,83 @@ l2p_single <- function(
   library(grid)
   .l2p_step("Loaded all libraries")
 
+  collapse_for_provenance <- function(x) {
+    if (is.null(x) || length(x) == 0) {
+      return("")
+    }
+
+    paste(as.character(x), collapse = ";")
+  }
+
+  provenance_file_from_results <- function(results_file) {
+    ext <- tools::file_ext(results_file)
+    if (!nzchar(ext)) {
+      ext <- "csv"
+    }
+    paste0(tools::file_path_sans_ext(results_file), "_provenance.", ext)
+  }
+
+  write_provenance_csv <- function(provenance, results_file) {
+    if (is.null(results_file) || !nzchar(results_file)) {
+      return(invisible(NULL))
+    }
+
+    provenance_file <- provenance_file_from_results(results_file)
+    provenance_tbl <- data.frame(
+      field = names(provenance),
+      value = vapply(provenance, collapse_for_provenance, character(1)),
+      stringsAsFactors = FALSE
+    )
+    utils::write.csv(provenance_tbl, provenance_file, row.names = FALSE)
+    provenance_file
+  }
+
+  analysis_provenance <- list(
+    analysis_template_name = "L2P_Single",
+    analysis_template_version = "4.0",
+    analysis_run_timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
+    analysis_r_version = R.version.string,
+    analysis_l2p_version = as.character(utils::packageVersion("l2p")),
+    analysis_l2psupp_version = as.character(utils::packageVersion("l2psupp")),
+    analysis_species = species,
+    analysis_gene_column = collapse_for_provenance(gene_names_column),
+    analysis_rank_column = collapse_for_provenance(t_statistic_column),
+    analysis_significance_column = collapse_for_provenance(significance_column),
+    analysis_fold_change_column = collapse_for_provenance(fold_change_column),
+    analysis_collections_to_include = collapse_for_provenance(
+      collections_to_include
+    ),
+    analysis_custom_pathways_used = !is.null(custom_pathways_list),
+    analysis_custom_pathway_count = if (is.null(custom_pathways_list)) {
+      0L
+    } else {
+      length(custom_pathways_list)
+    },
+    analysis_select_by_rank = select_by_rank,
+    analysis_select_top_percentage_of_genes = select_top_percentage_of_genes,
+    analysis_select_top_genes = select_top_genes,
+    analysis_significance_threshold = significance_threshold,
+    analysis_fold_change_threshold = fold_change_threshold,
+    analysis_use_built_in_gene_universe = use_built_in_gene_universe,
+    analysis_minimum_pathway_hit_count = minimum_pathway_hit_count,
+    analysis_p_value_threshold_for_output = p_value_threshold_for_output,
+    analysis_use_fdr_p_values = use_fdr_p_values,
+    analysis_export_plot_file = collapse_for_provenance(export_plot_file),
+    analysis_export_results_file = collapse_for_provenance(export_results_file)
+  )
+
+  cat(sprintf(
+    paste0(
+      "\nL2P Single Analysis\n",
+      "R version: %s\n",
+      "l2p: %s\n",
+      "l2psupp: %s\n"
+    ),
+    analysis_provenance$analysis_r_version,
+    analysis_provenance$analysis_l2p_version,
+    analysis_provenance$analysis_l2psupp_version
+  ))
+
   ## --------- ##
   ## Functions ##
   ## --------- ##
@@ -498,6 +730,27 @@ l2p_single <- function(
     }, character(1))
     l2pout <- l2pout %>% arrange(pval)
     return(l2pout)
+  }
+
+  align_custom_pathways_to_gene_map <- function(pathway_list, gene_name_map) {
+    lapply(pathway_list, function(pathway_entry) {
+      pathway_entry <- as.character(pathway_entry)
+      if (length(pathway_entry) <= 2) {
+        return(pathway_entry)
+      }
+
+      pathway_genes <- pathway_entry[-c(1, 2)]
+      mapped_genes <- gene_name_map[pathway_genes]
+      mapped_genes <- ifelse(
+        is.na(mapped_genes) | !nzchar(mapped_genes),
+        pathway_genes,
+        mapped_genes
+      )
+      mapped_genes <- unique(as.character(mapped_genes))
+      mapped_genes <- mapped_genes[!is.na(mapped_genes) & nzchar(mapped_genes)]
+
+      c(pathway_entry[1:2], mapped_genes)
+    })
   }
 
   # Function to plot bar graphs for GO results
@@ -694,7 +947,10 @@ l2p_single <- function(
         axis.text.y = element_text(colour = "black"),
         axis.text.x = element_text(colour = "black", size = 15),
         legend.key.size = unit(1, "cm"),
-        legend.title = element_text(size = 15, margin = margin(l = 20)),
+        legend.title = element_text(
+          size = 15,
+          margin = margin(b = 10, l = 20)
+        ),
         legend.text = element_text(size = 15)
       ) +
       xlim(xmin, xmax) +
@@ -707,8 +963,15 @@ l2p_single <- function(
         size = seq(0, sizemax, by = 10)
       ) +
       guides(
-        colour = guide_colourbar(order = 1),
-        size = guide_legend(order = 2)
+        colour = guide_colourbar(
+          order = 1,
+          title.position = "top",
+          title.hjust = 0.5
+        ),
+        size = guide_legend(
+          order = 2,
+          title.position = "top"
+        )
       )
     print(gplot)
     return(gplot)
@@ -740,13 +1003,13 @@ l2p_single <- function(
   if (select_by_rank == TRUE) {
     genesmat <- deg_table %>%
       dplyr::select(
-        .data[[gene_name_column]],
-        .data[[column_used_to_rank_genes]]
+        .data[[gene_names_column]],
+        .data[[t_statistic_column]]
       )
     genesmat <- genesmat %>%
-      dplyr::arrange(desc(.data[[column_used_to_rank_genes]]))
+      dplyr::arrange(desc(.data[[t_statistic_column]]))
     genesmat <- genesmat %>%
-      dplyr::filter(!is.na(.data[[column_used_to_rank_genes]]))
+      dplyr::filter(!is.na(.data[[t_statistic_column]]))
     if (select_top_percentage_of_genes == TRUE) {
       numselect <- ceiling(0.1 * dim(deg_table)[1])
     } else {
@@ -756,7 +1019,7 @@ l2p_single <- function(
     numselect <- NULL
     genesmat <- deg_table %>%
       dplyr::select(
-        .data[[gene_name_column]],
+        .data[[gene_names_column]],
         .data[[fold_change_column]],
         .data[[significance_column]]
       )
@@ -769,10 +1032,10 @@ l2p_single <- function(
 
   # Select Upregulated genes
   if (!is.null(numselect)) {
-    genes_to_include[[1]] <- head(genesmat[[gene_name_column]], numselect)
+    genes_to_include[[1]] <- head(genesmat[[gene_names_column]], numselect)
     lastgene[[1]] <- tail(genes_to_include[[1]], 1)
   } else {
-    if (grepl("logFC|log2FC", fold_change_column)) {
+    if (is_log_fold_change_column(fold_change_column)) {
       logFC_threshold <- log2(fold_change_threshold)
       genes_to_include[[1]] <- deg_table %>%
         dplyr::arrange(.data[[significance_column]]) %>%
@@ -780,7 +1043,7 @@ l2p_single <- function(
           .data[[significance_column]] <= significance_threshold &
             .data[[fold_change_column]] >= logFC_threshold
         ) %>%
-        pull(gene_name_column)
+        pull(gene_names_column)
       n <- length(genes_to_include[[1]])
       cat(sprintf("Number of DEG genes using set cut-offs: %s \n", n))
       if (n < minimum_number_of_deg_genes) {
@@ -802,7 +1065,7 @@ l2p_single <- function(
           .data[[significance_column]] <= significance_threshold &
             .data[[fold_change_column]] >= fold_change_threshold
         ) %>%
-        pull(gene_name_column)
+        pull(gene_names_column)
       n <- length(genes_to_include[[1]])
       # cat(sprintf("Number of DEG genes: %s \n",n))
       if (n < minimum_number_of_deg_genes) {
@@ -822,10 +1085,10 @@ l2p_single <- function(
 
   # Select Downregulated Genes
   if (!is.null(numselect)) {
-    genes_to_include[[2]] <- rev(tail(genesmat[[gene_name_column]], numselect))
+    genes_to_include[[2]] <- rev(tail(genesmat[[gene_names_column]], numselect))
     lastgene[[2]] <- tail(genes_to_include[[2]], 1)
   } else {
-    if (grepl("logFC|log2FC", fold_change_column)) {
+    if (is_log_fold_change_column(fold_change_column)) {
       logFC_threshold <- -1 * log2(fold_change_threshold)
       genes_to_include[[2]] <- deg_table %>%
         dplyr::arrange(.data[[significance_column]]) %>%
@@ -833,7 +1096,7 @@ l2p_single <- function(
           .data[[significance_column]] <= significance_threshold &
             .data[[fold_change_column]] <= logFC_threshold
         ) %>%
-        pull(gene_name_column)
+        pull(gene_names_column)
       n <- length(genes_to_include[[2]])
       cat(sprintf("Number of DEG genes: %s \n", n))
       if (n < minimum_number_of_deg_genes) {
@@ -855,7 +1118,7 @@ l2p_single <- function(
           .data[[significance_column]] <= significance_threshold &
             .data[[fold_change_column]] <= -1 * fold_change_threshold
         ) %>%
-        pull(gene_name_column)
+        pull(gene_names_column)
       n <- length(genes_to_include[[2]])
       # cat(sprintf("Number of DEG genes: %s \n",n))
       if (n < minimum_number_of_deg_genes) {
@@ -881,7 +1144,7 @@ l2p_single <- function(
 
   # ========== OPTIMIZATION: Pre-compute gene maps once ==========
   # Extract raw gene universe once (all genes from DEG table).
-  raw_gene_universe <- unique(as.character(genesmat[[gene_name_column]]))
+  raw_gene_universe <- unique(as.character(genesmat[[gene_names_column]]))
   raw_gene_universe <- raw_gene_universe[
     !is.na(raw_gene_universe) & nzchar(raw_gene_universe)
   ]
@@ -932,6 +1195,41 @@ l2p_single <- function(
       !is.na(processed_gene_universe) & nzchar(processed_gene_universe)
     ]
     .l2p_step("Gene universe processing completed")
+  }
+
+  if (!is.null(custom_pathways_list)) {
+    custom_pathway_genes <- unique(unlist(lapply(
+      custom_pathways_list,
+      function(pathway_entry) {
+        pathway_entry <- as.character(pathway_entry)
+        if (length(pathway_entry) <= 2) {
+          return(character(0))
+        }
+        pathway_entry[-c(1, 2)]
+      }
+    )))
+    custom_pathway_genes <- custom_pathway_genes[
+      !is.na(custom_pathway_genes) & nzchar(custom_pathway_genes)
+    ]
+
+    if (length(custom_pathway_genes) > 0) {
+      if (species == "Human") {
+        custom_pathway_gene_map <- updategenes(custom_pathway_genes, trust = 1)
+        names(custom_pathway_gene_map) <- custom_pathway_genes
+      } else {
+        custom_pathway_gene_map <- sapply(custom_pathway_genes, function(x) {
+          o2o(x, species, "human")[1]
+        })
+        custom_pathway_gene_map <- custom_pathway_gene_map[
+          !is.na(custom_pathway_gene_map)
+        ]
+      }
+      custom_pathways_list <- align_custom_pathways_to_gene_map(
+        custom_pathways_list,
+        custom_pathway_gene_map
+      )
+    }
+    .l2p_step("Custom pathway database processing completed")
   }
 
   # ========== END OPTIMIZATION ==========
@@ -1051,16 +1349,16 @@ l2p_single <- function(
 
     if (select_by_rank == FALSE) {
       lastgenedat <- deg_table %>%
-        dplyr::filter(.data[[gene_name_column]] == lastgene[[i]]) %>%
+        dplyr::filter(.data[[gene_names_column]] == lastgene[[i]]) %>%
         select(
-          .data[[gene_name_column]],
+          .data[[gene_names_column]],
           fold_change_column,
           significance_column
         )
     } else {
       reporting_columns <- unique(c(
-        gene_name_column,
-        column_used_to_rank_genes,
+        gene_names_column,
+        t_statistic_column,
         fold_change_column,
         significance_column
       ))
@@ -1069,7 +1367,7 @@ l2p_single <- function(
           reporting_columns %in% colnames(deg_table)
       ]
       lastgenedat <- deg_table %>%
-        dplyr::filter(.data[[gene_name_column]] == lastgene[[i]]) %>%
+        dplyr::filter(.data[[gene_names_column]] == lastgene[[i]]) %>%
         dplyr::select(dplyr::all_of(reporting_columns))
     }
 
@@ -1081,15 +1379,36 @@ l2p_single <- function(
     .l2p_step(sprintf("Running Fisher's exact test for %s", plotitle[[i]]))
 
     if (use_built_in_gene_universe == TRUE) {
-      x[[i]] <- l2p(genes_to_include[[i]], categories = collections_to_include)
-      cat("\n\nUsing built-in gene universe.\n")
+      if (!is.null(custom_pathways_list)) {
+        x[[i]] <- l2p(
+          genes_to_include[[i]],
+          categories = collections_to_include,
+          custompathways = custom_pathways_list
+        )
+        cat("\n\nUsing custom pathways with built-in gene universe.\n")
+      } else {
+        x[[i]] <- l2p(
+          genes_to_include[[i]],
+          categories = collections_to_include
+        )
+        cat("\n\nUsing built-in gene universe.\n")
+      }
       cat(paste0("Total number of pathways tested: ", nrow(x[[i]])))
     } else {
-      x[[i]] <- l2p(
-        genes_to_include[[i]],
-        categories = collections_to_include,
-        universe = gene_universe
-      )
+      if (!is.null(custom_pathways_list)) {
+        x[[i]] <- l2p(
+          genes_to_include[[i]],
+          categories = collections_to_include,
+          custompathways = custom_pathways_list,
+          universe = gene_universe
+        )
+      } else {
+        x[[i]] <- l2p(
+          genes_to_include[[i]],
+          categories = collections_to_include,
+          universe = gene_universe
+        )
+      }
       cat(
         "\n\nUsing all genes included in the differential expression analysis as gene universe.\n\n"
       )
@@ -1298,6 +1617,26 @@ l2p_single <- function(
     if (!is.null(export_results_file) && nzchar(export_results_file)) {
       utils::write.csv(combined_paths, export_results_file, row.names = FALSE)
       .l2p_step("Saved results to CSV")
+
+      final_analysis_provenance <- c(
+        analysis_provenance,
+        list(
+          analysis_input_gene_count = length(raw_gene_universe),
+          analysis_selected_up_gene_count = length(genes_to_include[[1]]),
+          analysis_selected_down_gene_count = length(genes_to_include[[2]]),
+          analysis_gene_universe_count = if (is.null(processed_gene_universe)) {
+            "built-in"
+          } else {
+            length(processed_gene_universe)
+          },
+          analysis_result_row_count = nrow(combined_paths)
+        )
+      )
+      provenance_file <- write_provenance_csv(
+        final_analysis_provenance,
+        export_results_file
+      )
+      .l2p_step(sprintf("Saved provenance to %s", provenance_file))
     }
 
     return(combined_paths)

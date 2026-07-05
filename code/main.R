@@ -3,6 +3,34 @@
 # L2P Analysis (Single) - Simplified Main Entry Point
 # Over-representation pathway analysis with automatic column detection
 
+# ===== VERSION BANNER =====
+cat("======================================\n")
+cat("L2P Single Analysis\n")
+cat("======================================\n")
+cat(sprintf("R version: %s\n", R.version.string))
+cat(sprintf("l2p package: %s\n", as.character(packageVersion("l2p"))))
+cat(sprintf("l2psupp package: %s\n", as.character(packageVersion("l2psupp"))))
+
+# Try to detect MSigDB version from package metadata
+msigdb_version_detected <- FALSE
+tryCatch({
+  if (exists("msigdb_version", where = asNamespace("l2p"))) {
+    cat(sprintf("MSigDB version: %s (from l2p)\n", get("msigdb_version", envir = asNamespace("l2p"))))
+    msigdb_version_detected <- TRUE
+  } else if (exists("msigdb_version", where = asNamespace("l2psupp"))) {
+    cat(sprintf("MSigDB version: %s (from l2psupp)\n", get("msigdb_version", envir = asNamespace("l2psupp"))))
+    msigdb_version_detected <- TRUE
+  }
+}, error = function(e) {
+  # Silently continue if detection fails
+})
+
+if (!msigdb_version_detected) {
+  cat(sprintf("Pathway databases: Bundled in l2psupp v%s\n", as.character(packageVersion("l2psupp"))))
+  cat("  Pathway database details can be found at https://github.com/ccbr/l2p\n")
+}
+cat("======================================\n\n")
+
 # ===== DEBUG TIMING UTILITIES =====
 .timer_start <- Sys.time()
 .step_times <- list()
@@ -26,13 +54,13 @@ log_time("Loaded optparse library")
 # Define command-line options (all function parameters exposed)
 option_list <- list(
   # Basic settings
-  make_option("--comparison", type="character", help="Comparison to analyze"),
+  make_option("--comparison", type="character", default=NULL, help="Comparison to analyze"),
   make_option("--species", type="character", default="Human", help="Species [default %default]"),
   make_option("--collections_to_include", type="character", default="GO,REACTOME,KEGG", help="Pathway collections [default %default]"),
   
   # Column overrides
-  make_option("--gene_name_column", type="character", default=NULL, help="Optional: Override gene name column"),
-  make_option("--column_used_to_rank_genes", type="character", default=NULL, help="Optional: Override ranking column"),
+  make_option("--gene_names_column", type="character", default=NULL, help="Optional: Override gene name column"),
+  make_option("--t_statistic_column", type="character", default=NULL, help="Optional: Override ranking column"),
   make_option("--significance_column", type="character", default=NULL, help="Optional: Override significance column"),
   make_option("--fold_change_column", type="character", default=NULL, help="Optional: Override fold change column"),
   
@@ -49,6 +77,11 @@ option_list <- list(
   make_option("--p_value_threshold_for_output", type="double", default=0.05, help="P-value threshold [default %default]"),
   make_option("--use_built_in_gene_universe", type="character", default="FALSE", help="Use built-in gene universe [default %default]"),
   make_option("--use_fdr_p_values", type="character", default="FALSE", help="Use FDR p-values [default %default]"),
+  
+  # Custom pathways
+  make_option("--custom_pathways", type="character", default=NULL, help="Optional: Path to custom pathway file"),
+  make_option("--custom_pathway_name_column", type="character", default="gene_set_name", help="Pathway name column [default %default]"),
+  make_option("--custom_pathway_gene_column", type="character", default="gene_symbol", help="Gene symbol column [default %default]"),
   
   # Visualization
   make_option("--number_of_pathways_to_plot", type="integer", default=12, help="Number of pathways to plot [default %default]"),
@@ -122,6 +155,35 @@ if (!is.data.frame(deg_data)) {
 cat(sprintf("Loaded DEG table: %d rows x %d columns\n", nrow(deg_data), ncol(deg_data)))
 cat(sprintf("Available columns: %s\n\n", paste(colnames(deg_data), collapse=", ")))
 
+# ===== ENVIRONMENT & DATABASE VERSION INFO =====
+cat("\n======================================\n")
+cat("L2P Single-Comparison Analysis\n")
+cat("======================================\n")
+cat(sprintf("R version: %s\n", R.version.string))
+cat(sprintf("l2p package: %s\n", as.character(packageVersion("l2p"))))
+cat(sprintf("l2psupp package: %s\n", as.character(packageVersion("l2psupp"))))
+
+# Try to detect MSigDB version
+msigdb_version_detected <- FALSE
+tryCatch({
+  if (exists("msigdb_version", where = asNamespace("l2p"))) {
+    cat(sprintf("MSigDB version: %s (from l2p)\n", get("msigdb_version", envir = asNamespace("l2p"))))
+    msigdb_version_detected <- TRUE
+  } else if (exists("msigdb_version", where = asNamespace("l2psupp"))) {
+    cat(sprintf("MSigDB version: %s (from l2psupp)\n", get("msigdb_version", envir = asNamespace("l2psupp"))))
+    msigdb_version_detected <- TRUE
+  }
+}, error = function(e) {
+  # Silent - will show warning below
+})
+
+if (!msigdb_version_detected) {
+  cat(sprintf("Pathway databases: Bundled in l2psupp v%s\n", as.character(packageVersion("l2psupp"))))
+  cat("  Pathway database details can be found at https://github.com/ccbr/l2p\n")
+}
+
+cat("======================================\n\n")
+
 # Convert string boolean parameters to logical
 opt$select_by_rank <- as.logical(opt$select_by_rank)
 opt$select_top_percentage_of_genes <- as.logical(opt$select_top_percentage_of_genes)
@@ -157,32 +219,32 @@ cat(sprintf("Species: %s\n", opt$species))
 cat(sprintf("Collections: %s\n\n", paste(collections, collapse=", ")))
 
 # Auto-detect gene name column (or use user override)
-if (!is.null(opt$gene_name_column) && opt$gene_name_column != "") {
+if (!is.null(opt$gene_names_column) && opt$gene_names_column != "") {
   # User provided override
-  gene_name_column <- opt$gene_name_column
-  if (!(gene_name_column %in% colnames(deg_data))) {
+  gene_names_column <- opt$gene_names_column
+  if (!(gene_names_column %in% colnames(deg_data))) {
     stop(sprintf("ERROR: Specified gene column '%s' not found in data.\nAvailable columns: %s", 
-                 gene_name_column, paste(colnames(deg_data), collapse=", ")))
+                 gene_names_column, paste(colnames(deg_data), collapse=", ")))
   }
-  cat(sprintf("Using user-specified gene name column: '%s'\n", gene_name_column))
+  cat(sprintf("Using user-specified gene name column: '%s'\n", gene_names_column))
 } else {
   # Auto-detect
   gene_col_candidates <- c("Gene", "gene", "symbol", "Symbol", "gene_name", "gene_symbol", "GeneSymbol")
-  gene_name_column <- NULL
+  gene_names_column <- NULL
   for (col in gene_col_candidates) {
     if (col %in% colnames(deg_data)) {
-      gene_name_column <- col
+      gene_names_column <- col
       break
     }
   }
   
-  if (is.null(gene_name_column)) {
+  if (is.null(gene_names_column)) {
     # Default to first column if no match
-    gene_name_column <- colnames(deg_data)[1]
-    cat(sprintf("Warning: Could not auto-detect gene column. Using first column: '%s'\n", gene_name_column))
+    gene_names_column <- colnames(deg_data)[1]
+    cat(sprintf("Warning: Could not auto-detect gene column. Using first column: '%s'\n", gene_names_column))
     cat("If this is incorrect, specify the correct column in 'Gene Name Column (Optional)' in Advanced Options.\n")
   } else {
-    cat(sprintf("Auto-detected gene name column: '%s'\n", gene_name_column))
+    cat(sprintf("Auto-detected gene name column: '%s'\n", gene_names_column))
   }
 }
 
@@ -249,8 +311,8 @@ if (!is.null(opt$fold_change_column) && opt$fold_change_column != "") {
 }
 
 # Handle ranking column (or use user override)
-if (!is.null(opt$column_used_to_rank_genes) && opt$column_used_to_rank_genes != "") {
-  ranking_column <- opt$column_used_to_rank_genes
+if (!is.null(opt$t_statistic_column) && opt$t_statistic_column != "") {
+  ranking_column <- opt$t_statistic_column
   if (!(ranking_column %in% colnames(deg_data))) {
     stop(sprintf("ERROR: Specified ranking column '%s' not found in data.\nAvailable columns: %s", 
                  ranking_column, paste(colnames(deg_data), collapse=", ")))
@@ -280,17 +342,50 @@ if (!is.null(opt$column_used_to_rank_genes) && opt$column_used_to_rank_genes != 
 }
 
 log_time("Completed column detection and parameter setup")
+
+# Handle custom pathways if provided
+custom_pathways_data <- NULL
+if (!is.null(opt$custom_pathways) && opt$custom_pathways != "") {
+  cat("\n=== Loading custom pathway database ===\n")
+  if (file.exists(opt$custom_pathways)) {
+    # Detect file type and read
+    file_ext <- tolower(tools::file_ext(opt$custom_pathways))
+    if (file_ext == "csv") {
+      custom_pathways_data <- read.csv(opt$custom_pathways, stringsAsFactors = FALSE, check.names = FALSE)
+    } else {
+      custom_pathways_data <- read.delim(opt$custom_pathways, stringsAsFactors = FALSE, check.names = FALSE)
+    }
+    cat(sprintf("Loaded custom pathways: %d rows\n", nrow(custom_pathways_data)))
+    cat(sprintf("Available columns: %s\n", paste(colnames(custom_pathways_data), collapse=", ")))
+    
+    # Verify required columns exist
+    if (!(opt$custom_pathway_name_column %in% colnames(custom_pathways_data))) {
+      stop(sprintf("ERROR: Custom pathway name column '%s' not found in custom pathway file", opt$custom_pathway_name_column))
+    }
+    if (!(opt$custom_pathway_gene_column %in% colnames(custom_pathways_data))) {
+      stop(sprintf("ERROR: Custom pathway gene column '%s' not found in custom pathway file", opt$custom_pathway_gene_column))
+    }
+    cat(sprintf("Using pathway name column: '%s'\n", opt$custom_pathway_name_column))
+    cat(sprintf("Using gene symbol column: '%s'\n", opt$custom_pathway_gene_column))
+  } else {
+    stop(sprintf("ERROR: Custom pathway file not found: %s", opt$custom_pathways))
+  }
+}
+
 cat("\n=== Starting L2P pathway analysis ===\n")
 
 results <- l2p_single(
   deg_table = deg_data,
-  gene_name_column = gene_name_column,
-  column_used_to_rank_genes = ranking_column,
+  gene_names_column = gene_names_column,
+  t_statistic_column = ranking_column,
   significance_column = significance_column,
   fold_change_column = fold_change_column,
   comparison = opt$comparison,
   species = opt$species,
   collections_to_include = collections,
+  custom_pathways = custom_pathways_data,
+  custom_pathway_name_column = opt$custom_pathway_name_column,
+  custom_pathway_gene_column = opt$custom_pathway_gene_column,
   select_by_rank = opt$select_by_rank,
   select_top_percentage_of_genes = opt$select_top_percentage_of_genes,
   select_top_genes = opt$select_top_genes,
