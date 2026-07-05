@@ -46,23 +46,24 @@
 	],
 	"parameters": [
 		{
-			"id": "GVa02PCjD3IEbBaA",
+			"id": "RtUpv855GYKRr536",
 			"category": "basic",
 			"name": "Comparison",
 			"param_name": "comparison",
 			"help_text": "Which comparison to analyze (e.g., 'B-A', 'C-A', 'Treatment-Control'). Must match column prefix in your DEG table",
 			"type": "text",
-			"value_type": "string"
+			"value_type": "string",
+			"default_value": "B-A"
 		},
 		{
-			"id": "hEQqsmPWM4PxGL2X",
+			"id": "0tw8SUPjKVsvFISh",
 			"category": "basic",
 			"name": "Species",
 			"param_name": "species",
 			"help_text": "Gene annotation species. Non-human genes will be converted to human orthologs",
 			"type": "list",
 			"value_type": "string",
-			"default_value": "Human",
+			"default_value": "Mouse",
 			"extra_data": [
 				"Human",
 				"Mouse",
@@ -74,17 +75,17 @@
 			]
 		},
 		{
-			"id": "9elUheNXtk5azCZr",
+			"id": "VULk4Ufsr3f194IP",
 			"category": "basic",
 			"name": "Pathway Collections",
 			"param_name": "collections_to_include",
 			"help_text": "Comma-separated pathway collections: GO, REACTOME, KEGG, PANTH, PID, BIOCYC, WikiPathways, H, C1-C8 (MSigDB). Leave blank if using only custom pathways",
 			"type": "text",
 			"value_type": "string",
-			"default_value": "GO,REACTOME,KEGG"
+			"default_value": "H"
 		},
 		{
-			"id": "48hImYP4ffVVRAPN",
+			"id": "M7uP4jXe3pP2X0n6",
 			"category": "columns",
 			"name": "Gene Name Column",
 			"param_name": "gene_names_column",
@@ -93,7 +94,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "mHsfwQaIsKQ07rq2",
+			"id": "sLaTHUjHzzANcNb0",
 			"category": "columns",
 			"name": "Ranking Column",
 			"param_name": "t_statistic_column",
@@ -102,7 +103,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "ujSzfve8P42AFMPQ",
+			"id": "PWNv7nTg4B54EDtY",
 			"category": "columns",
 			"name": "Significance Column",
 			"param_name": "significance_column",
@@ -111,7 +112,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "bkmFmyL7UrBNa4fJ",
+			"id": "3NjWQfaWvZ6foVbd",
 			"category": "columns",
 			"name": "Fold Change Column",
 			"param_name": "fold_change_column",
@@ -120,7 +121,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "3kL0IAtBWjRkE2id",
+			"id": "F2sxCGrKSqNGlEWe",
 			"category": "gene_selection",
 			"name": "Select By Rank",
 			"param_name": "select_by_rank",
@@ -134,7 +135,7 @@
 			]
 		},
 		{
-			"id": "1oEAS9Fjwq5UTgdC",
+			"id": "yIVb26IYFR0zMmBr",
 			"category": "gene_selection",
 			"name": "Select Top Percentage",
 			"param_name": "select_top_percentage_of_genes",
@@ -148,7 +149,7 @@
 			]
 		},
 		{
-			"id": "H0URBNqNxL3QvsUE",
+			"id": "T31a5z1ochof6J2S",
 			"category": "gene_selection",
 			"name": "Select Top Genes",
 			"param_name": "select_top_genes",
@@ -159,7 +160,7 @@
 			"minimum": 1
 		},
 		{
-			"id": "jJsFPOrGqKErRxCb",
+			"id": "02Dp5B7qc0c3ZbjN",
 			"category": "gene_selection",
 			"name": "Significance Threshold",
 			"param_name": "significance_threshold",
@@ -171,7 +172,7 @@
 			"maximum": 1
 		},
 		{
-			"id": "pzhMmYgCq8azbK9z",
+			"id": "CsuH92JEQ2DnOS4w",
 			"category": "gene_selection",
 			"name": "Fold Change Threshold",
 			"param_name": "fold_change_threshold",
@@ -182,7 +183,7 @@
 			"minimum": 0
 		},
 		{
-			"id": "Jm4H0JKZMTjfsmEl",
+			"id": "w2bRutS2q1GvH857",
 			"category": "gene_selection",
 			"name": "Minimum DEG Genes",
 			"param_name": "minimum_number_of_deg_genes",
@@ -193,7 +194,7 @@
 			"minimum": 1
 		},
 		{
-			"id": "OtBhwxfcVDJtc8ae",
+			"id": "SVVPrbrrv4YS2P6h",
 			"category": "pathways",
 			"name": "Minimum Pathway Hits",
 			"param_name": "minimum_pathway_hit_count",
@@ -204,7 +205,7 @@
 			"minimum": 1
 		},
 		{
-			"id": "mW9TLuml1pzQB6LD",
+			"id": "a0FV1oET3ge8ftyC",
 			"category": "pathways",
 			"name": "P-value Threshold for Output",
 			"param_name": "p_value_threshold_for_output",
@@ -216,7 +217,7 @@
 			"maximum": 1
 		},
 		{
-			"id": "Wbr8evuTFKn7Dfja",
+			"id": "OtGmEdJ4a7hPej8x",
 			"category": "pathways",
 			"name": "Use Built-in Gene Universe",
 			"param_name": "use_built_in_gene_universe",
@@ -230,7 +231,7 @@
 			]
 		},
 		{
-			"id": "Mr3HB5Hk5FxIVr1x",
+			"id": "0ThUJQMfJZSq1EOW",
 			"category": "pathways",
 			"name": "Use FDR P-values",
 			"param_name": "use_fdr_p_values",
@@ -244,7 +245,7 @@
 			]
 		},
 		{
-			"id": "uocAEd2O0erbXWBu",
+			"id": "uL4HN6kGzFMSUURC",
 			"category": "custom_pathways",
 			"name": "Custom Pathway File",
 			"param_name": "custom_pathways",
@@ -253,7 +254,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "BAVCYNKF05FzchIL",
+			"id": "2SGuNhet3YOHYUII",
 			"category": "custom_pathways",
 			"name": "Pathway Name Column",
 			"param_name": "custom_pathway_name_column",
@@ -263,7 +264,7 @@
 			"default_value": "gene_set_name"
 		},
 		{
-			"id": "jpar3Tilm3uNQW6y",
+			"id": "S5OGSLpL84Jz0JBp",
 			"category": "custom_pathways",
 			"name": "Gene Symbol Column",
 			"param_name": "custom_pathway_gene_column",
@@ -273,7 +274,7 @@
 			"default_value": "gene_symbol"
 		},
 		{
-			"id": "gcsx1lL7B22Dq6KW",
+			"id": "froMmpUBhZDoQDL3",
 			"category": "visualization",
 			"name": "Number of Pathways to Plot",
 			"param_name": "number_of_pathways_to_plot",
@@ -284,7 +285,7 @@
 			"minimum": 1
 		},
 		{
-			"id": "m5UDrg232XMD9G9c",
+			"id": "PtlZeX7aUK3FhIdS",
 			"category": "visualization",
 			"name": "Pathway Label Max Length",
 			"param_name": "pathway_axis_label_max_length",
@@ -295,7 +296,7 @@
 			"minimum": 10
 		},
 		{
-			"id": "Ebf6PcM0ZfYZ7WMV",
+			"id": "cG3CGS5ioHC6zPOl",
 			"category": "visualization",
 			"name": "Pathway Label Font Size",
 			"param_name": "pathway_axis_label_font_size",
@@ -306,7 +307,40 @@
 			"minimum": 8
 		},
 		{
-			"id": "ILKasBGmWNLz8tXe",
+			"id": "BIR74wDn1Aqtayup",
+			"category": "visualization",
+			"name": "X-Axis Title Font Size",
+			"param_name": "x_axis_title_font_size",
+			"help_text": "Font size for x-axis title",
+			"type": "text",
+			"value_type": "integer",
+			"default_value": "20",
+			"minimum": 1
+		},
+		{
+			"id": "QegY5wxzcSaaXlyf",
+			"category": "visualization",
+			"name": "Y-Axis Title Font Size",
+			"param_name": "y_axis_title_font_size",
+			"help_text": "Font size for y-axis title",
+			"type": "text",
+			"value_type": "integer",
+			"default_value": "20",
+			"minimum": 1
+		},
+		{
+			"id": "snykM6Vb9IjTjk7D",
+			"category": "visualization",
+			"name": "X-Axis Tick Font Size",
+			"param_name": "x_axis_tick_font_size",
+			"help_text": "Font size for x-axis tick labels",
+			"type": "text",
+			"value_type": "integer",
+			"default_value": "15",
+			"minimum": 1
+		},
+		{
+			"id": "4gjo2UCLLS7URWA7",
 			"category": "visualization",
 			"name": "Plot Top Pathways Up",
 			"param_name": "plot_top_pathways_up",
@@ -320,7 +354,7 @@
 			]
 		},
 		{
-			"id": "GGa45rvAnFiOoLru",
+			"id": "hibLtqlTvqHMHhxm",
 			"category": "visualization",
 			"name": "Custom Pathways Up",
 			"param_name": "pathways_to_use_up",
@@ -329,7 +363,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "Et8SCQXkbU98pKEt",
+			"id": "9lDT518gpaA7Isp2",
 			"category": "visualization",
 			"name": "Plot Top Pathways Down",
 			"param_name": "plot_top_pathways_down",
@@ -343,7 +377,7 @@
 			]
 		},
 		{
-			"id": "TA6Vzxd2UUcNYedY",
+			"id": "dYzJdd7LngtD9Y6w",
 			"category": "visualization",
 			"name": "Custom Pathways Down",
 			"param_name": "pathways_to_use_down",
@@ -352,7 +386,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "TNkMbmmE5O3Fj3le",
+			"id": "du30mggNH2x5mLtj",
 			"category": "visualization",
 			"name": "Sort Bubble Plot By",
 			"param_name": "sort_bubble_plot_by",
@@ -367,7 +401,7 @@
 			]
 		},
 		{
-			"id": "kc7UUyQ4ncFqul2E",
+			"id": "8jkR3x3z3wfIcG3o",
 			"category": "visualization",
 			"name": "Bubble Size Variable",
 			"param_name": "plot_bubble_size",
@@ -382,7 +416,7 @@
 			]
 		},
 		{
-			"id": "zcX1dYOY0YTpxGWE",
+			"id": "IcOWOBIoAXuXIuD2",
 			"category": "visualization",
 			"name": "Bubble Color Variable",
 			"param_name": "plot_bubble_color",
@@ -397,7 +431,7 @@
 			]
 		},
 		{
-			"id": "8UQX72o9R3lFA5HW",
+			"id": "ISTPYfr9SYq0hYKd",
 			"category": "visualization",
 			"name": "Bubble Colors",
 			"param_name": "bubble_colors",
@@ -413,7 +447,7 @@
 			]
 		},
 		{
-			"id": "Y2SKPd5mQiYmUbzo",
+			"id": "4h7C9SLVMmNMsAQR",
 			"category": "visualization",
 			"name": "Bar Plot Color",
 			"param_name": "color_for_bar",
@@ -428,7 +462,7 @@
 			]
 		},
 		{
-			"id": "4za5jzumJ71zLyEy",
+			"id": "9Kjn11T5p9oUhqLl",
 			"category": "visualization",
 			"name": "Plot Width",
 			"param_name": "export_plot_width",
@@ -439,7 +473,7 @@
 			"minimum": 4
 		},
 		{
-			"id": "rB5qvehlVw9d03g4",
+			"id": "QXDNqrQkaeRxeIZC",
 			"category": "visualization",
 			"name": "Plot Height",
 			"param_name": "export_plot_height",

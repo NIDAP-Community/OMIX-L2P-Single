@@ -3,7 +3,8 @@
 #' @description
 #' Over-representation Analysis. Given a genelist, finds over-represented
 #' pathways with Fisher's exact test, using the l2p package. Requires as input a
-#' dataset with differential expression of genes (DEG).
+#' dataset with differential expression of genes (DEG). Final Potomac Compatible
+#' Version: v97. Final Sugarloaf V1: v125. View Documentation
 #'
 #' @details
 #' Contact CCBR at \email{NCICCBRNIDAP@@mail.nih.gov} if you encounter problems.
@@ -92,7 +93,8 @@
 #' plot Default: \code{12}.
 #' @param pathway_axis_label_max_length
 #' Numeric. Set pathway axis label maximum length as shown in Y-axis, set to
-#' 50 by default. Default: \code{50}.
+#' 50 by default. The effective wrap length is shortened automatically when
+#' \code{pathway_axis_label_font_size} is increased. Default: \code{50}.
 #' @param plot_top_pathways_up
 #' Logical. If TRUE, automatically selects top pathways for the Bubble Plot.
 #' If FALSE, user selects pathways (below) to display in plot Default:
@@ -129,7 +131,14 @@
 #' color gradient. blues (light to dark blue), reds (light to dark red), blue
 #' to red Default: \code{blues}.
 #' @param pathway_axis_label_font_size
-#' Numeric. Pathway labels font size Default: \code{15}.
+#' Numeric. Pathway labels font size. Also used to scale pathway label
+#' wrapping. Default: \code{15}.
+#' @param x_axis_title_font_size
+#' Numeric. Font size for plot x-axis titles. Default: \code{20}.
+#' @param y_axis_title_font_size
+#' Numeric. Font size for plot y-axis titles. Default: \code{20}.
+#' @param x_axis_tick_font_size
+#' Numeric. Font size for plot x-axis tick labels. Default: \code{15}.
 #' @param use_fdr_p_values
 #' Logical. If FALSE, use Fisher's Exact p-values. If TRUE, use FDR values.
 #' Default is FALSE. Default: \code{FALSE}.
@@ -212,6 +221,9 @@ l2p_single <- function(
   plot_bubble_color = "Fisher's Exact pval",
   bubble_colors = "blues",
   pathway_axis_label_font_size = 15,
+  x_axis_title_font_size = 20,
+  y_axis_title_font_size = 20,
+  x_axis_tick_font_size = 15,
   use_fdr_p_values = FALSE,
   color_for_bar = "GreentoBlue",
   use_built_in_gene_universe = FALSE,
@@ -346,6 +358,37 @@ l2p_single <- function(
     }
 
     trimws(x)
+  }
+
+  numeric_font_size <- function(x, arg_name) {
+    x <- as.numeric(x)[1]
+    if (!is.finite(x) || x <= 0) {
+      stop(sprintf(
+        "ERROR: `%s` must be a positive numeric font size.",
+        arg_name
+      ))
+    }
+
+    x
+  }
+
+  numeric_positive_integer <- function(x, arg_name) {
+    x <- as.numeric(x)[1]
+    if (!is.finite(x) || x <= 0) {
+      stop(sprintf(
+        "ERROR: `%s` must be a positive number.",
+        arg_name
+      ))
+    }
+
+    floor(x)
+  }
+
+  dynamic_wrap_length <- function(max_length, font_size) {
+    reference_font_size <- 8
+    adjusted_length <- floor(max_length * reference_font_size / font_size)
+
+    min(max_length, max(15, adjusted_length))
   }
 
   resolve_gene_names_column <- function(deg_table, gene_column) {
@@ -483,6 +526,39 @@ l2p_single <- function(
 
   # Input validation and setup:
   species <- normalize_species_label(species)
+  pathway_axis_label_max_length <- numeric_positive_integer(
+    pathway_axis_label_max_length,
+    "pathway_axis_label_max_length"
+  )
+  pathway_axis_label_font_size <- numeric_font_size(
+    pathway_axis_label_font_size,
+    "pathway_axis_label_font_size"
+  )
+  x_axis_title_font_size <- numeric_font_size(
+    x_axis_title_font_size,
+    "x_axis_title_font_size"
+  )
+  y_axis_title_font_size <- numeric_font_size(
+    y_axis_title_font_size,
+    "y_axis_title_font_size"
+  )
+  x_axis_tick_font_size <- numeric_font_size(
+    x_axis_tick_font_size,
+    "x_axis_tick_font_size"
+  )
+  effective_pathway_axis_label_max_length <- dynamic_wrap_length(
+    pathway_axis_label_max_length,
+    pathway_axis_label_font_size
+  )
+  if (effective_pathway_axis_label_max_length != pathway_axis_label_max_length) {
+    cat(sprintf(
+      paste0(
+        "\nPathway Axis Label Max Length set to %d after font-size ",
+        "adjustment\n\n"
+      ),
+      effective_pathway_axis_label_max_length
+    ))
+  }
 
   gene_names_column <- resolve_gene_names_column(deg_table, gene_names_column)
   check_gene_species_case(deg_table, gene_names_column, species)
@@ -666,8 +742,8 @@ l2p_single <- function(
   }
 
   analysis_provenance <- list(
-    analysis_template_name = "L2P_Single",
-    analysis_template_version = "4.0",
+    analysis_template_name = "L2P_OMIX_Single_CO",
+    analysis_template_version = "v148",
     analysis_run_timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
     analysis_r_version = R.version.string,
     analysis_l2p_version = as.character(utils::packageVersion("l2p")),
@@ -695,6 +771,9 @@ l2p_single <- function(
     analysis_minimum_pathway_hit_count = minimum_pathway_hit_count,
     analysis_p_value_threshold_for_output = p_value_threshold_for_output,
     analysis_use_fdr_p_values = use_fdr_p_values,
+    analysis_x_axis_title_font_size = x_axis_title_font_size,
+    analysis_y_axis_title_font_size = y_axis_title_font_size,
+    analysis_x_axis_tick_font_size = x_axis_tick_font_size,
     analysis_export_plot_file = collapse_for_provenance(export_plot_file),
     analysis_export_results_file = collapse_for_provenance(export_results_file)
   )
@@ -805,12 +884,18 @@ l2p_single <- function(
             face = "bold"
           ),
           plot.margin = margin(t = 30, r = 10, b = 10, l = 10, unit = "pt"),
-          axis.title.y = element_text(size = 20, margin = margin(r = 80)),
-          axis.title.x = element_text(size = 20, margin = margin(t = 20)),
+          axis.title.y = element_text(
+            size = y_axis_title_font_size,
+            margin = margin(r = 80)
+          ),
+          axis.title.x = element_text(
+            size = x_axis_title_font_size,
+            margin = margin(t = 20)
+          ),
           axis.text.y = element_text(colour = "black"),
           axis.text.x = element_text(
             colour = "black",
-            size = pathway_axis_label_font_size
+            size = x_axis_tick_font_size
           ),
           legend.key.size = unit(1, "cm"),
           legend.title = element_text(size = 15, margin = margin(l = 20)),
@@ -844,12 +929,18 @@ l2p_single <- function(
             face = "bold"
           ),
           plot.margin = margin(t = 30, r = 10, b = 10, l = 10, unit = "pt"),
-          axis.title.y = element_text(size = 20, margin = margin(r = 80)),
-          axis.title.x = element_text(size = 20, margin = margin(t = 20)),
+          axis.title.y = element_text(
+            size = y_axis_title_font_size,
+            margin = margin(r = 80)
+          ),
+          axis.title.x = element_text(
+            size = x_axis_title_font_size,
+            margin = margin(t = 20)
+          ),
           axis.text.y = element_text(colour = "black"),
           axis.text.x = element_text(
             colour = "black",
-            size = pathway_axis_label_font_size
+            size = x_axis_tick_font_size
           ),
           legend.key.size = unit(1, "cm"),
           legend.title = element_text(size = 15, margin = margin(l = 20)),
@@ -942,10 +1033,19 @@ l2p_single <- function(
         text = element_text(size = pathway_axis_label_font_size),
         legend.position = "right",
         legend.key.height = unit(1, "cm"),
-        axis.title.y = element_text(size = 20, margin = margin(r = 80)),
-        axis.title.x = element_text(size = 20, margin = margin(t = 20)),
+        axis.title.y = element_text(
+          size = y_axis_title_font_size,
+          margin = margin(r = 80)
+        ),
+        axis.title.x = element_text(
+          size = x_axis_title_font_size,
+          margin = margin(t = 20)
+        ),
         axis.text.y = element_text(colour = "black"),
-        axis.text.x = element_text(colour = "black", size = 15),
+        axis.text.x = element_text(
+          colour = "black",
+          size = x_axis_tick_font_size
+        ),
         legend.key.size = unit(1, "cm"),
         legend.title = element_text(
           size = 15,
@@ -1509,7 +1609,7 @@ l2p_single <- function(
         dplyr::mutate(
           pathwayname2 = stringr::str_wrap(
             pathwayname2,
-            pathway_axis_label_max_length
+            effective_pathway_axis_label_max_length
           )
         )
       goResults <- distinct(goResults, pathwayname2, .keep_all = TRUE)
