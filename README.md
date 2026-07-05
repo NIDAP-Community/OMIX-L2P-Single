@@ -2,11 +2,11 @@
 
 ## Overview
 
+**Version**: v4.0 | **Part of the OMIX analysis suite**
+
 Over-representation pathway analysis for differential expression results. Given a gene list, this tool identifies over-represented pathways using Fisher's exact test via the [CCBR L2P package](https://github.com/ccbr/l2p).
 
-**Part of the OMIX analysis suite** - A collection of genomics tools for reproducible bioinformatics workflows.
-
-**Version Information**: Each run logs R version, l2p package version (0.0.14), l2psupp package version (0.0.14), and MSigDB database version for reproducibility tracking.
+Each run logs R version, l2p package version (0.0.14), l2psupp package version (0.0.14), and MSigDB database version for reproducibility tracking.
 
 ## Description
 
@@ -102,6 +102,44 @@ If your data uses non-standard column names, override auto-detection:
 - **H**: MSigDB Hallmark gene sets
 - **C1-C8**: MSigDB curated, motif, computational, oncogenic, immunologic, and cell type gene sets
 
+## Using Custom Pathway Databases
+
+You can use your own custom pathway database instead of or in addition to the built-in collections.
+
+### File Format Requirements
+
+Your custom pathway file must be in **TSV or CSV format** with two required columns:
+
+- **Pathway name column**: Contains pathway/gene set names (default: `gene_set_name`)
+- **Gene symbol column**: Contains gene symbols (default: `gene_symbol`)
+
+**Example format**:
+```
+gene_set_name,gene_symbol
+My_Custom_Pathway_1,TP53
+My_Custom_Pathway_1,BRCA1
+My_Custom_Pathway_1,MYC
+My_Custom_Pathway_2,EGFR
+My_Custom_Pathway_2,KRAS
+```
+
+### How to Use Your Custom Database
+
+1. Prepare your custom pathway file in the format above (TSV or CSV)
+2. Open the **App Panel** (⚙️ icon) in this capsule
+3. Go to **"Custom Pathways (Optional)"** section
+4. **Custom Pathway File**: Click to upload your file from your local computer
+5. **Pathway Name Column**: Adjust if your column name differs (default: `gene_set_name`)
+6. **Gene Symbol Column**: Adjust if your column name differs (default: `gene_symbol`)
+7. **Pathway Collections**: Leave blank to use *only* custom pathways, or keep filled to use custom + standard collections
+8. Click **Run**
+
+### Tips
+
+- **Gene symbols must match your species**: Use human symbols or the tool will attempt ortholog conversion
+- **Combine with standard collections**: You can use custom pathways alongside GO, REACTOME, etc.
+- **Coming soon**: Curated custom pathway databases will be available as dropdown options in future releases
+
 ## Supported Species
 
 Human, Mouse, Rat, Rabbit, Zebrafish, Macaque, Drosophila
@@ -160,14 +198,6 @@ Multi-panel figure with:
 - **L2P package**: https://github.com/ccbr/l2p
 - **CCBR**: CCR Collaborative Bioinformatics Resource
 - **Contact**: NCICCBRNIDAP@mail.nih.gov
-
-## Version History
-
-- **v1.1** (2025-03): 
-  - Added MSigDB version logging to run outputs for improved reproducibility tracking
-  - Harmonized parameter names with L2P Multi: `gene_names_column` (plural) and `t_statistic_column` (explicit)
-  - Fixed optparse default value handling for comparison parameter
-- **v1.0**: Initial release with progressive disclosure UI and smart column detection
 
 ---
 

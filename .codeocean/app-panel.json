@@ -46,7 +46,7 @@
 	],
 	"parameters": [
 		{
-			"id": "RtUpv855GYKRr536",
+			"id": "CbsRhmV9N1w60PJW",
 			"category": "basic",
 			"name": "Comparison",
 			"param_name": "comparison",
@@ -56,7 +56,7 @@
 			"default_value": "B-A"
 		},
 		{
-			"id": "0tw8SUPjKVsvFISh",
+			"id": "JauM4H5xFqmghtu3",
 			"category": "basic",
 			"name": "Species",
 			"param_name": "species",
@@ -75,7 +75,7 @@
 			]
 		},
 		{
-			"id": "VULk4Ufsr3f194IP",
+			"id": "wIXimki3bqwHir77",
 			"category": "basic",
 			"name": "Pathway Collections",
 			"param_name": "collections_to_include",
@@ -85,7 +85,7 @@
 			"default_value": "H"
 		},
 		{
-			"id": "M7uP4jXe3pP2X0n6",
+			"id": "3zNKp1ovg82mnRhs",
 			"category": "columns",
 			"name": "Gene Name Column",
 			"param_name": "gene_names_column",
@@ -94,7 +94,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "sLaTHUjHzzANcNb0",
+			"id": "LyctksORqcpAT9Jd",
 			"category": "columns",
 			"name": "Ranking Column",
 			"param_name": "t_statistic_column",
@@ -103,7 +103,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "PWNv7nTg4B54EDtY",
+			"id": "mSDa5ccvYb3zjAJD",
 			"category": "columns",
 			"name": "Significance Column",
 			"param_name": "significance_column",
@@ -112,7 +112,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "3NjWQfaWvZ6foVbd",
+			"id": "ajUIqt4zCjIhnFJT",
 			"category": "columns",
 			"name": "Fold Change Column",
 			"param_name": "fold_change_column",
@@ -121,7 +121,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "F2sxCGrKSqNGlEWe",
+			"id": "0UIKglsEAjE4aHTS",
 			"category": "gene_selection",
 			"name": "Select By Rank",
 			"param_name": "select_by_rank",
@@ -135,7 +135,7 @@
 			]
 		},
 		{
-			"id": "yIVb26IYFR0zMmBr",
+			"id": "wSBYGzRQUaLogakd",
 			"category": "gene_selection",
 			"name": "Select Top Percentage",
 			"param_name": "select_top_percentage_of_genes",
@@ -149,7 +149,7 @@
 			]
 		},
 		{
-			"id": "T31a5z1ochof6J2S",
+			"id": "Qf0WZApATgzmCi6f",
 			"category": "gene_selection",
 			"name": "Select Top Genes",
 			"param_name": "select_top_genes",
@@ -160,7 +160,7 @@
 			"minimum": 1
 		},
 		{
-			"id": "02Dp5B7qc0c3ZbjN",
+			"id": "ke1msZKrDQDkRaLD",
 			"category": "gene_selection",
 			"name": "Significance Threshold",
 			"param_name": "significance_threshold",
@@ -172,7 +172,7 @@
 			"maximum": 1
 		},
 		{
-			"id": "CsuH92JEQ2DnOS4w",
+			"id": "KnH5aoKJJMvLkJd6",
 			"category": "gene_selection",
 			"name": "Fold Change Threshold",
 			"param_name": "fold_change_threshold",
@@ -183,7 +183,7 @@
 			"minimum": 0
 		},
 		{
-			"id": "w2bRutS2q1GvH857",
+			"id": "Vq9GHr90rmCqzpYM",
 			"category": "gene_selection",
 			"name": "Minimum DEG Genes",
 			"param_name": "minimum_number_of_deg_genes",
@@ -194,7 +194,7 @@
 			"minimum": 1
 		},
 		{
-			"id": "SVVPrbrrv4YS2P6h",
+			"id": "glyLMygEYhXDRLrw",
 			"category": "pathways",
 			"name": "Minimum Pathway Hits",
 			"param_name": "minimum_pathway_hit_count",
@@ -205,7 +205,7 @@
 			"minimum": 1
 		},
 		{
-			"id": "a0FV1oET3ge8ftyC",
+			"id": "uNqUJ0pmLKcCIwaX",
 			"category": "pathways",
 			"name": "P-value Threshold for Output",
 			"param_name": "p_value_threshold_for_output",
@@ -217,7 +217,7 @@
 			"maximum": 1
 		},
 		{
-			"id": "OtGmEdJ4a7hPej8x",
+			"id": "wNLpDIqIk6IVdR2c",
 			"category": "pathways",
 			"name": "Use Built-in Gene Universe",
 			"param_name": "use_built_in_gene_universe",
@@ -231,7 +231,7 @@
 			]
 		},
 		{
-			"id": "0ThUJQMfJZSq1EOW",
+			"id": "TyXcD2TZenSOinvr",
 			"category": "pathways",
 			"name": "Use FDR P-values",
 			"param_name": "use_fdr_p_values",
@@ -245,16 +245,16 @@
 			]
 		},
 		{
-			"id": "uL4HN6kGzFMSUURC",
+			"id": "Gg1CrW8MFZoEqXHa",
 			"category": "custom_pathways",
 			"name": "Custom Pathway File",
 			"param_name": "custom_pathways",
-			"help_text": "Path to custom pathway file (TSV/CSV with pathway_name and gene_symbol columns). Leave blank to use only standard collections. Can be used WITH or WITHOUT standard collections",
-			"type": "text",
+			"help_text": "Select custom pathway file from attached data assets (TSV/CSV with pathway_name and gene_symbol columns). Leave blank to use only standard collections. Can be used WITH or WITHOUT standard collections",
+			"type": "file",
 			"value_type": "string"
 		},
 		{
-			"id": "2SGuNhet3YOHYUII",
+			"id": "p6djAQjsanZHacM0",
 			"category": "custom_pathways",
 			"name": "Pathway Name Column",
 			"param_name": "custom_pathway_name_column",
@@ -264,7 +264,7 @@
 			"default_value": "gene_set_name"
 		},
 		{
-			"id": "S5OGSLpL84Jz0JBp",
+			"id": "h6XHpMDiaNsCSJKN",
 			"category": "custom_pathways",
 			"name": "Gene Symbol Column",
 			"param_name": "custom_pathway_gene_column",
@@ -274,7 +274,7 @@
 			"default_value": "gene_symbol"
 		},
 		{
-			"id": "froMmpUBhZDoQDL3",
+			"id": "dMV579MyFgsBaocI",
 			"category": "visualization",
 			"name": "Number of Pathways to Plot",
 			"param_name": "number_of_pathways_to_plot",
@@ -285,7 +285,7 @@
 			"minimum": 1
 		},
 		{
-			"id": "PtlZeX7aUK3FhIdS",
+			"id": "sAbhYzNYmM5pTX3z",
 			"category": "visualization",
 			"name": "Pathway Label Max Length",
 			"param_name": "pathway_axis_label_max_length",
@@ -296,7 +296,7 @@
 			"minimum": 10
 		},
 		{
-			"id": "cG3CGS5ioHC6zPOl",
+			"id": "eLYOlMn6yJ18qaoT",
 			"category": "visualization",
 			"name": "Pathway Label Font Size",
 			"param_name": "pathway_axis_label_font_size",
@@ -307,7 +307,7 @@
 			"minimum": 8
 		},
 		{
-			"id": "BIR74wDn1Aqtayup",
+			"id": "tTM3hjfSFOdT6Mef",
 			"category": "visualization",
 			"name": "X-Axis Title Font Size",
 			"param_name": "x_axis_title_font_size",
@@ -318,7 +318,7 @@
 			"minimum": 1
 		},
 		{
-			"id": "QegY5wxzcSaaXlyf",
+			"id": "C9sObyUgxMCWKQpZ",
 			"category": "visualization",
 			"name": "Y-Axis Title Font Size",
 			"param_name": "y_axis_title_font_size",
@@ -329,7 +329,7 @@
 			"minimum": 1
 		},
 		{
-			"id": "snykM6Vb9IjTjk7D",
+			"id": "X9graTohX8osI99a",
 			"category": "visualization",
 			"name": "X-Axis Tick Font Size",
 			"param_name": "x_axis_tick_font_size",
@@ -340,7 +340,7 @@
 			"minimum": 1
 		},
 		{
-			"id": "4gjo2UCLLS7URWA7",
+			"id": "ytnopolokMzh3Wqt",
 			"category": "visualization",
 			"name": "Plot Top Pathways Up",
 			"param_name": "plot_top_pathways_up",
@@ -354,7 +354,7 @@
 			]
 		},
 		{
-			"id": "hibLtqlTvqHMHhxm",
+			"id": "EJ8s1DE5pV0dO4Aj",
 			"category": "visualization",
 			"name": "Custom Pathways Up",
 			"param_name": "pathways_to_use_up",
@@ -363,7 +363,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "9lDT518gpaA7Isp2",
+			"id": "EqSGmDbB2meYB4ME",
 			"category": "visualization",
 			"name": "Plot Top Pathways Down",
 			"param_name": "plot_top_pathways_down",
@@ -377,7 +377,7 @@
 			]
 		},
 		{
-			"id": "dYzJdd7LngtD9Y6w",
+			"id": "BQmpF96fqHV3kkJN",
 			"category": "visualization",
 			"name": "Custom Pathways Down",
 			"param_name": "pathways_to_use_down",
@@ -386,7 +386,7 @@
 			"value_type": "string"
 		},
 		{
-			"id": "du30mggNH2x5mLtj",
+			"id": "UtZZO8cIuPli9W3L",
 			"category": "visualization",
 			"name": "Sort Bubble Plot By",
 			"param_name": "sort_bubble_plot_by",
@@ -401,7 +401,7 @@
 			]
 		},
 		{
-			"id": "8jkR3x3z3wfIcG3o",
+			"id": "hKw4JT6DsYtfct9N",
 			"category": "visualization",
 			"name": "Bubble Size Variable",
 			"param_name": "plot_bubble_size",
@@ -416,7 +416,7 @@
 			]
 		},
 		{
-			"id": "IcOWOBIoAXuXIuD2",
+			"id": "bY2TzeCR0ESQSFHP",
 			"category": "visualization",
 			"name": "Bubble Color Variable",
 			"param_name": "plot_bubble_color",
@@ -431,7 +431,7 @@
 			]
 		},
 		{
-			"id": "ISTPYfr9SYq0hYKd",
+			"id": "TpRUrNqwOXKfkEwi",
 			"category": "visualization",
 			"name": "Bubble Colors",
 			"param_name": "bubble_colors",
@@ -447,7 +447,7 @@
 			]
 		},
 		{
-			"id": "4h7C9SLVMmNMsAQR",
+			"id": "x7CMamMEi6iblmCB",
 			"category": "visualization",
 			"name": "Bar Plot Color",
 			"param_name": "color_for_bar",
@@ -462,7 +462,7 @@
 			]
 		},
 		{
-			"id": "9Kjn11T5p9oUhqLl",
+			"id": "1ap1zmrUVGcpgbqy",
 			"category": "visualization",
 			"name": "Plot Width",
 			"param_name": "export_plot_width",
@@ -473,7 +473,7 @@
 			"minimum": 4
 		},
 		{
-			"id": "QXDNqrQkaeRxeIZC",
+			"id": "NUurjXmNnJ835CCr",
 			"category": "visualization",
 			"name": "Plot Height",
 			"param_name": "export_plot_height",
