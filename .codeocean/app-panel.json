@@ -3,13 +3,13 @@
 	"named_parameters": true,
 	"general": {
 		"title": "L2P Analysis (Single)",
-		"instructions": "START HERE: Fill in 'Basic Settings' to run with smart defaults. Advanced users can customize gene selection, pathway filtering, visualization, or use custom pathway databases."
+		"instructions": "START HERE:\n1. **Try with demo data**: Leave 'DEG Table File' blank to automatically use the attached Mouse RNA-seq demo dataset (comparison 'B-A')\n2. **Or upload your own**: Use the 'DEG Table File' parameter to upload your DEG results (RDS/CSV/TSV)\n3. Specify the 'Comparison' to analyze (e.g., 'B-A', 'C-A', 'Treatment-Control')\n4. Configure Basic Settings and run\n\nAdvanced users can customize gene selection, pathway filtering, visualization, or use custom pathway databases."
 	},
 	"datasets": [
 		{
 			"id": "28035d52-03e6-4761-8f50-72d48af496d1",
-			"name": "DEG Table",
-			"help_text": "DEG table with gene names, fold changes, and statistical measures"
+			"name": "Demo DEG Table",
+			"help_text": "Mouse RNA-seq demo data (var_DEGAnalysis.rds) with comparisons B-A, C-A, C-B. Used automatically if no file is uploaded."
 		}
 	],
 	"categories": [
@@ -45,6 +45,15 @@
 		}
 	],
 	"parameters": [
+		{
+			"id": "deg_file_upload",
+			"category": "basic",
+			"name": "DEG Table File",
+			"param_name": "deg_file",
+			"help_text": "Upload your differential expression file (RDS/CSV/TSV). Leave blank to automatically use the attached demo dataset.",
+			"type": "file",
+			"value_type": "string"
+		},
 		{
 			"id": "CbsRhmV9N1w60PJW",
 			"category": "basic",

@@ -196,8 +196,12 @@ Multi-panel figure with:
 ## References
 
 - **L2P package**: https://github.com/ccbr/l2p
+
+## Support
+
+For questions or issues:
+- **NIDAP Team**: NCICCBRNIDAP@mail.nih.gov
 - **CCBR**: CCR Collaborative Bioinformatics Resource
-- **Contact**: NCICCBRNIDAP@mail.nih.gov
 
 ---
 

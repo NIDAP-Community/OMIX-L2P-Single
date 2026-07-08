@@ -54,6 +54,7 @@ log_time("Loaded optparse library")
 # Define command-line options (all function parameters exposed)
 option_list <- list(
   # Basic settings
+  make_option("--deg_file", type="character", default=NULL, help="Upload DEG file (CSV, TSV, or RDS)"),
   make_option("--comparison", type="character", default=NULL, help="Comparison to analyze"),
   make_option("--species", type="character", default="Human", help="Species [default %default]"),
   make_option("--collections_to_include", type="character", default="GO,REACTOME,KEGG", help="Pathway collections [default %default]"),
@@ -104,7 +105,40 @@ option_list <- list(
 )
 
 opt_parser <- OptionParser(option_list=option_list)
-opt <- parse_args(opt_parser)
+
+# Filter out empty string arguments before optparse sees them
+# Code Ocean passes --param "" for blank file uploads, which optparse rejects
+args <- commandArgs(trailingOnly = TRUE)
+
+# Debug: show what we received
+cat("DEBUG: Received", length(args), "arguments:\n")
+for (i in seq_along(args)) {
+  cat(sprintf("  [%d] '%s'\n", i, args[i]))
+}
+
+filtered_args <- character()
+i <- 1
+while (i <= length(args)) {
+  # Skip standalone empty strings
+  if (args[i] == "") {
+    cat(sprintf("DEBUG: Skipping empty string at position %d\n", i))
+    i <- i + 1
+  } else if (i < length(args) && startsWith(args[i], "--") && args[i+1] == "") {
+    # Skip flag + empty value pairs
+    cat(sprintf("DEBUG: Skipping flag '%s' with empty value at positions %d-%d\n", args[i], i, i+1))
+    i <- i + 2
+  } else {
+    filtered_args <- c(filtered_args, args[i])
+    i <- i + 1
+  }
+}
+
+cat("DEBUG: After filtering, passing", length(filtered_args), "arguments to optparse\n")
+for (i in seq_along(filtered_args)) {
+  cat(sprintf("  [%d] '%s'\n", i, filtered_args[i]))
+}
+
+opt <- parse_args(opt_parser, args = filtered_args)
 log_time("Parsed command-line arguments")
 
 # Validate required parameters
@@ -112,42 +146,79 @@ if (is.null(opt$comparison) || opt$comparison == "") {
   stop("ERROR: 'Comparison' parameter is required. Please specify which comparison to analyze (e.g., 'B-A', 'C-A').")
 }
 
-# Find and read DEG table from attached data asset
+# Find and read DEG table: uploaded file > data asset (priority-based loading)
 log_time("Starting data loading")
-rds_files <- list.files("/data/deg_table", pattern = "\\.rds$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
-csv_files <- list.files("/data/deg_table", pattern = "\\.(csv|tsv|txt)$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
 
-if (length(rds_files) > 0) {
-  deg_table_path <- rds_files[1]
-  cat(sprintf("Loading DEG table from RDS file: %s\n", deg_table_path))
-  deg_data <- readRDS(deg_table_path)
-  log_time("Loaded RDS file")
-  
-  # If RDS contains a list, extract the data frame
-  if (is.list(deg_data) && !is.data.frame(deg_data)) {
-    df_elements <- sapply(deg_data, is.data.frame)
-    if (any(df_elements)) {
-      deg_data <- deg_data[[which(df_elements)[1]]]
-      cat("Extracted data frame from list\n")
-    } else {
-      stop("ERROR: RDS file does not contain a data frame")
-    }
-  }
-  
-} else if (length(csv_files) > 0) {
-  deg_table_path <- csv_files[1]
-  cat(sprintf("Loading DEG table from CSV/TSV file: %s\n", deg_table_path))
+deg_data <- NULL
+deg_table_path <- NULL
+
+# Priority 1: Check for uploaded file
+if (!is.null(opt$deg_file) && opt$deg_file != "" && file.exists(opt$deg_file)) {
+  deg_table_path <- opt$deg_file
+  cat(sprintf("Loading DEG table from uploaded file: %s\n", deg_table_path))
   
   file_ext <- tolower(tools::file_ext(deg_table_path))
-  if (file_ext == "csv") {
+  if (file_ext == "rds") {
+    deg_data <- readRDS(deg_table_path)
+    log_time("Loaded uploaded RDS file")
+    
+    # If RDS contains a list, extract the data frame
+    if (is.list(deg_data) && !is.data.frame(deg_data)) {
+      df_elements <- sapply(deg_data, is.data.frame)
+      if (any(df_elements)) {
+        deg_data <- deg_data[[which(df_elements)[1]]]
+        cat("Extracted data frame from list\n")
+      } else {
+        stop("ERROR: RDS file does not contain a data frame")
+      }
+    }
+  } else if (file_ext == "csv") {
     deg_data <- read.csv(deg_table_path, stringsAsFactors = FALSE, check.names = FALSE)
+    log_time("Loaded uploaded CSV file")
   } else {
+    # Assume TSV/TXT
     deg_data <- read.delim(deg_table_path, stringsAsFactors = FALSE, check.names = FALSE)
+    log_time("Loaded uploaded TSV/TXT file")
   }
-  log_time("Loaded CSV/TSV file")
+}
+
+# Priority 2: Check for data asset at /data/deg_table/
+if (is.null(deg_data)) {
+  cat("No uploaded file found. Looking for DEG table in /data/deg_table/...\n")
+  rds_files <- list.files("/data/deg_table", pattern = "\\.rds$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
+  csv_files <- list.files("/data/deg_table", pattern = "\\.(csv|tsv|txt)$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
   
-} else {
-  stop("ERROR: No RDS, CSV, or TSV file found in attached DEG table data asset at /data/deg_table/")
+  if (length(rds_files) > 0) {
+    deg_table_path <- rds_files[1]
+    cat(sprintf("Loading DEG table from RDS file: %s\n", deg_table_path))
+    deg_data <- readRDS(deg_table_path)
+    log_time("Loaded RDS file")
+    
+    # If RDS contains a list, extract the data frame
+    if (is.list(deg_data) && !is.data.frame(deg_data)) {
+      df_elements <- sapply(deg_data, is.data.frame)
+      if (any(df_elements)) {
+        deg_data <- deg_data[[which(df_elements)[1]]]
+        cat("Extracted data frame from list\n")
+      } else {
+        stop("ERROR: RDS file does not contain a data frame")
+      }
+    }
+    
+  } else if (length(csv_files) > 0) {
+    deg_table_path <- csv_files[1]
+    cat(sprintf("Loading DEG table from CSV/TSV file: %s\n", deg_table_path))
+    
+    file_ext <- tolower(tools::file_ext(deg_table_path))
+    if (file_ext == "csv") {
+      deg_data <- read.csv(deg_table_path, stringsAsFactors = FALSE, check.names = FALSE)
+    } else {
+      deg_data <- read.delim(deg_table_path, stringsAsFactors = FALSE, check.names = FALSE)
+    }
+    log_time("Loaded CSV/TSV file")
+  } else {
+    stop("ERROR: No DEG table provided. Please upload a file or attach a DEG table data asset.")
+  }
 }
 
 # Verify we have a data frame

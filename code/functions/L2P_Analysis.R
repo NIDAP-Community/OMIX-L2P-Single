@@ -1282,15 +1282,21 @@ l2p_single <- function(
 
   if (use_built_in_gene_universe == TRUE) {
     processed_gene_universe <- NULL
+    original_gene_map <- selected_gene_map
     .l2p_step("Skipping custom gene universe processing")
   } else if (species == "Human") {
-    processed_gene_universe <- updategenes(raw_gene_universe, trust = 1)
-    names(processed_gene_universe) <- raw_gene_universe
-    processed_gene_universe <- as.character(processed_gene_universe)
+    original_gene_map <- updategenes(raw_gene_universe, trust = 1)
+    names(original_gene_map) <- raw_gene_universe
+    processed_gene_universe <- as.character(original_gene_map)
     .l2p_step("Gene universe processing completed")
   } else {
-    processed_gene_universe <- o2o(raw_gene_universe, species, "human")
-    processed_gene_universe <- unique(as.character(processed_gene_universe))
+    original_gene_map <- sapply(raw_gene_universe, function(x) {
+      o2o(x, species, "human")[1]
+    })
+    original_gene_map <- original_gene_map[
+      !is.na(original_gene_map) & nzchar(original_gene_map)
+    ]
+    processed_gene_universe <- unique(as.character(original_gene_map))
     processed_gene_universe <- processed_gene_universe[
       !is.na(processed_gene_universe) & nzchar(processed_gene_universe)
     ]
@@ -1549,7 +1555,7 @@ l2p_single <- function(
     if (nrow(l2p_result) > 0) {
       l2p_result <- as.data.frame(return_original_genes(
         l2p_result,
-        new_gene_names
+        original_gene_map
       ))
 
       l2p_result$enrichment_score <- as.numeric(formatC(
