@@ -216,10 +216,34 @@ find_named_csv <- function(base_dir, filename, mode_label) {
   )
   matches <- all_csv[tolower(basename(all_csv)) == tolower(filename)]
   if (length(matches) == 0) {
-    stop(sprintf(
-      "ERROR: '%s' mode could not find '%s' under %s.",
-      mode_label, filename, base_dir
-    ))
+    cat(sprintf("\n=== ERROR: '%s' mode could not find '%s' ===\n", mode_label, filename))
+    # List available diff_*.csv files to help the user identify available comparisons
+    diff_files <- all_csv[grepl("^diff_.*\\.csv$", tolower(basename(all_csv)))]
+    filt_file  <- all_csv[tolower(basename(all_csv)) == "diff_filt.csv"]
+    if (length(diff_files) > 0 || length(filt_file) > 0) {
+      cat("  This looks like a MOSuite moo-properties dataset.\n")
+      if (length(diff_files) > 0) {
+        available <- sub("^diff_", "", sub("\\.csv$", "", basename(diff_files), ignore.case = TRUE),
+                         ignore.case = TRUE)
+        cat(sprintf("  Available comparisons: %s\n", paste(sort(available), collapse = ", ")))
+        cat("  Set the 'Comparison' parameter to one of the above.\n")
+      }
+    } else if (length(all_csv) == 0) {
+      all_files <- list.files(base_dir, full.names = TRUE, recursive = TRUE, all.files = FALSE)
+      if (length(all_files) == 0) {
+        cat("  No data found under /data/.\n")
+        cat("  For 'All DEG' mode: attach a MOSuite moo-properties dataset with mount name 'deg_table'.\n")
+        cat("  For standalone use: switch DEG Table File to 'Table' or blank and attach a flat CSV/RDS.\n")
+      } else {
+        cat(sprintf("  No CSV files found. %d file(s) present but none match diff_*.csv.\n",
+                    length(all_files)))
+      }
+    } else {
+      cat(sprintf("  Found %d CSV file(s) but none named '%s'.\n", length(all_csv), filename))
+      cat(sprintf("  Available: %s\n", paste(basename(head(all_csv, 5)), collapse = ", ")))
+    }
+    cat("\n")
+    stop(sprintf("'%s' mode could not find '%s'. See details above.", mode_label, filename))
   }
   if (length(matches) > 1) {
     cat(sprintf("  Multiple '%s' files found; using: %s\n", filename, matches[1]))
