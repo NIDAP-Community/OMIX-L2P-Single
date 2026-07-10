@@ -3,13 +3,13 @@
 	"named_parameters": true,
 	"general": {
 		"title": "L2P Analysis (Single)",
-		"instructions": "All input data uses mount name 'deg_table'. Attach your dataset with mount name 'deg_table' to replace the demo.\n\n- **(blank)**: auto-detects a single flat file or RDS from mount 'deg_table'\n- **Table**: same as blank - auto-detects a flat file from mount 'deg_table'\n- **Filtered DEG**: MOSuite moo-properties asset (mount 'deg_table') - after 'filter differential expression'\n- **All DEG** (default): MOSuite moo-properties asset (mount 'deg_table') - after 'differential expression analysis'\n\nSet 'Comparison' to the comparison ID to analyze. Configure Basic Settings and run."
+		"instructions": "All input data uses mount name 'deg_table'. Attach your dataset with mount name 'deg_table' to replace the demo.\n\n- **(blank)**: auto-detects a single flat file or RDS from mount 'deg_table'\n- **Table**: same as blank - auto-detects a flat file from mount 'deg_table'\n- **Filtered DEG**: MOSuite moo-properties asset (mount 'deg_table') - after 'filter differential expression'\n- **All DEG** (default): MOSuite moo-properties asset (mount 'deg_table') - after 'differential expression analysis'\n\nSet 'Comparison' to the comparison ID in your data. Configure Basic Settings and run."
 	},
 	"datasets": [
 		{
 			"id": "28035d52-03e6-4761-8f50-72d48af496d1",
 			"name": "Demo DEG Table",
-			"help_text": "Mouse RNA-seq demo data (var_DEGAnalysis.rds) with comparisons B-A, C-A, C-B. Used automatically if no file is uploaded."
+			"help_text": "Demo Mouse RNA-seq data (mount: deg_table). Replaced automatically when you attach your own dataset with the same mount name."
 		}
 	],
 	"categories": [
@@ -67,7 +67,7 @@
 			"category": "basic",
 			"name": "Comparison",
 			"param_name": "comparison",
-			"help_text": "Which comparison to analyze (e.g., 'B-A', 'C-A', 'Treatment-Control'). Must match column prefix in your DEG table",
+			"description": "Comparison ID to analyze (e.g. 'B-A'). Used to find diff_B-A.csv in All DEG mode and to derive column names for wide tables.",
 			"type": "text",
 			"value_type": "string",
 			"default_value": "B-A"
@@ -77,7 +77,7 @@
 			"category": "basic",
 			"name": "Species",
 			"param_name": "species",
-			"help_text": "Gene annotation species. Non-human genes will be converted to human orthologs",
+			"description": "Species for ortholog mapping. Non-human genes are converted to human before L2P analysis",
 			"type": "list",
 			"value_type": "string",
 			"default_value": "Mouse",
@@ -85,9 +85,9 @@
 				"Human",
 				"Mouse",
 				"Rat",
-				"Rabbit",
-				"Zebrafish",
 				"Macaque",
+				"Zebrafish",
+				"Rabbit",
 				"Drosophila"
 			]
 		},
@@ -96,83 +96,79 @@
 			"category": "basic",
 			"name": "Pathway Collections",
 			"param_name": "collections_to_include",
-			"help_text": "Comma-separated pathway collections: GO, REACTOME, KEGG, PANTH, PID, BIOCYC, WikiPathways, H, C1-C8 (MSigDB). Leave blank if using only custom pathways",
+			"description": "Type one or more database codes. To run multiple databases together, join codes with commas and no spaces (e.g. H,REACTOME,KEGG). Available codes: H (Hallmark, 50 gene sets, fastest), GO, REACTOME, KEGG, WikiPathways, C2, C3, C5, C7, C8.",
 			"type": "text",
 			"value_type": "string",
 			"default_value": "H"
 		},
 		{
 			"id": "3zNKp1ovg82mnRhs",
-			"category": "columns",
-			"name": "Gene Name Column",
+			"category": "basic",
+			"name": "Gene Names Column",
 			"param_name": "gene_names_column",
-			"help_text": "Override auto-detected gene name column (e.g., 'Gene', 'symbol'). Leave blank to auto-detect",
+			"description": "Name of the column containing gene symbols (e.g. GeneName for MOSuite output, Gene for other formats)",
 			"type": "text",
-			"value_type": "string"
+			"value_type": "string",
+			"default_value": "GeneName"
 		},
 		{
 			"id": "LyctksORqcpAT9Jd",
 			"category": "columns",
-			"name": "Ranking Column",
+			"name": "T-Statistic Column",
 			"param_name": "t_statistic_column",
-			"help_text": "Override ranking column if not named '{comparison}_tstat'. Leave blank to auto-detect",
+			"description": "T-statistic column name. MOSuite default 'tstat' works automatically for both All DEG and Filtered DEG modes. For a custom flat table with prefix-style columns (e.g. B-A_tstat), ensure Comparison matches the prefix.",
 			"type": "text",
-			"value_type": "string"
+			"value_type": "string",
+			"default_value": "tstat"
 		},
 		{
 			"id": "mSDa5ccvYb3zjAJD",
 			"category": "columns",
 			"name": "Significance Column",
 			"param_name": "significance_column",
-			"help_text": "Override significance/p-value column if not named '{comparison}_pval'. Leave blank to auto-detect",
+			"description": "Significance column name. MOSuite default 'adjpval' works automatically for both All DEG and Filtered DEG modes. For a custom flat table with prefix-style columns, ensure Comparison matches the prefix.",
 			"type": "text",
-			"value_type": "string"
+			"value_type": "string",
+			"default_value": "adjpval"
 		},
 		{
 			"id": "ajUIqt4zCjIhnFJT",
 			"category": "columns",
 			"name": "Fold Change Column",
 			"param_name": "fold_change_column",
-			"help_text": "Override fold change column if not named '{comparison}_FC'. Leave blank to auto-detect",
+			"description": "Fold change column name. MOSuite default 'FC' works automatically for both All DEG and Filtered DEG modes. For a custom flat table with prefix-style columns, ensure Comparison matches the prefix.",
 			"type": "text",
-			"value_type": "string"
+			"value_type": "string",
+			"default_value": "FC"
 		},
 		{
 			"id": "0UIKglsEAjE4aHTS",
 			"category": "gene_selection",
 			"name": "Select By Rank",
 			"param_name": "select_by_rank",
-			"help_text": "Select genes by rank (recommended) or by significance/fold change thresholds",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "TRUE",
-			"extra_data": [
-				"TRUE",
-				"FALSE"
-			]
+			"description": "Select genes by rank (recommended) or by significance/fold change thresholds",
+			"type": "text",
+			"value_type": "boolean",
+			"default_value": "TRUE"
 		},
 		{
 			"id": "wSBYGzRQUaLogakd",
 			"category": "gene_selection",
 			"name": "Select Top Percentage",
 			"param_name": "select_top_percentage_of_genes",
-			"help_text": "Select top percentage of genes (vs fixed number)",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "TRUE",
-			"extra_data": [
-				"TRUE",
-				"FALSE"
-			]
+			"description": "Select top percentage of genes (vs fixed number)",
+			"type": "text",
+			"value_type": "boolean",
+			"default_value": "TRUE"
 		},
 		{
 			"id": "Qf0WZApATgzmCi6f",
 			"category": "gene_selection",
-			"name": "Select Top Genes",
+			"name": "Number of Top Genes",
 			"param_name": "select_top_genes",
-			"help_text": "Number of top genes to select (if not using percentage)",
+			"description": "Number of top genes to select (if not using percentage)",
 			"type": "text",
-			"value_type": "integer",
+			"value_type": "number",
 			"default_value": "500",
 			"minimum": 1
 		},
@@ -181,7 +177,7 @@
 			"category": "gene_selection",
 			"name": "Significance Threshold",
 			"param_name": "significance_threshold",
-			"help_text": "Significance threshold for gene selection (if not using rank)",
+			"description": "P-value threshold for gene selection (if not using rank)",
 			"type": "text",
 			"value_type": "number",
 			"default_value": "0.05",
@@ -193,21 +189,21 @@
 			"category": "gene_selection",
 			"name": "Fold Change Threshold",
 			"param_name": "fold_change_threshold",
-			"help_text": "Fold change threshold for gene selection (if not using rank)",
+			"description": "Fold change threshold for gene selection (if not using rank)",
 			"type": "text",
 			"value_type": "number",
 			"default_value": "1.2",
-			"minimum": 0
+			"minimum": 1
 		},
 		{
 			"id": "Vq9GHr90rmCqzpYM",
 			"category": "gene_selection",
 			"name": "Minimum DEG Genes",
 			"param_name": "minimum_number_of_deg_genes",
-			"help_text": "Minimum number of DEG genes required",
+			"description": "Minimum number of DEG genes required per comparison",
 			"type": "text",
-			"value_type": "integer",
-			"default_value": "50",
+			"value_type": "number",
+			"default_value": "100",
 			"minimum": 1
 		},
 		{
@@ -215,18 +211,18 @@
 			"category": "pathways",
 			"name": "Minimum Pathway Hits",
 			"param_name": "minimum_pathway_hit_count",
-			"help_text": "Minimum genes required per pathway to be considered",
+			"description": "Minimum genes required per pathway to be considered",
 			"type": "text",
-			"value_type": "integer",
+			"value_type": "number",
 			"default_value": "5",
 			"minimum": 1
 		},
 		{
 			"id": "uNqUJ0pmLKcCIwaX",
 			"category": "pathways",
-			"name": "P-value Threshold for Output",
+			"name": "P-value Threshold",
 			"param_name": "p_value_threshold_for_output",
-			"help_text": "Filter output to pathways below this p-value threshold (0 = include all)",
+			"description": "P-value cutoff for including pathways in results (0 = include all)",
 			"type": "text",
 			"value_type": "number",
 			"default_value": "0.05",
@@ -238,35 +234,27 @@
 			"category": "pathways",
 			"name": "Use Built-in Gene Universe",
 			"param_name": "use_built_in_gene_universe",
-			"help_text": "Use built-in gene universe instead of detected genes",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "FALSE",
-			"extra_data": [
-				"TRUE",
-				"FALSE"
-			]
+			"description": "Use built-in gene universe instead of detected genes",
+			"type": "text",
+			"value_type": "boolean",
+			"default_value": "FALSE"
 		},
 		{
 			"id": "TyXcD2TZenSOinvr",
 			"category": "pathways",
 			"name": "Use FDR P-values",
 			"param_name": "use_fdr_p_values",
-			"help_text": "Use FDR-adjusted p-values for pathway significance",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "FALSE",
-			"extra_data": [
-				"TRUE",
-				"FALSE"
-			]
+			"description": "Use FDR-adjusted p-values for pathway significance",
+			"type": "text",
+			"value_type": "boolean",
+			"default_value": "FALSE"
 		},
 		{
 			"id": "Gg1CrW8MFZoEqXHa",
 			"category": "custom_pathways",
 			"name": "Custom Pathway File",
 			"param_name": "custom_pathways",
-			"help_text": "Select custom pathway file from attached data assets (TSV/CSV with pathway_name and gene_symbol columns). Leave blank to use only standard collections. Can be used WITH or WITHOUT standard collections",
+			"description": "Select custom pathway file from attached data assets (TSV/CSV format). Leave blank to use only standard collections.",
 			"type": "file",
 			"value_type": "string"
 		},
@@ -275,7 +263,7 @@
 			"category": "custom_pathways",
 			"name": "Pathway Name Column",
 			"param_name": "custom_pathway_name_column",
-			"help_text": "Column name containing pathway names in custom file",
+			"description": "Column name containing pathway names in custom file",
 			"type": "text",
 			"value_type": "string",
 			"default_value": "gene_set_name"
@@ -285,7 +273,7 @@
 			"category": "custom_pathways",
 			"name": "Gene Symbol Column",
 			"param_name": "custom_pathway_gene_column",
-			"help_text": "Column name containing gene symbols in custom file",
+			"description": "Column name containing gene symbols in custom file",
 			"type": "text",
 			"value_type": "string",
 			"default_value": "gene_symbol"
@@ -295,10 +283,10 @@
 			"category": "visualization",
 			"name": "Number of Pathways to Plot",
 			"param_name": "number_of_pathways_to_plot",
-			"help_text": "Number of top pathways to display in plots",
+			"description": "Maximum number of pathways to display in each plot",
 			"type": "text",
-			"value_type": "integer",
-			"default_value": "12",
+			"value_type": "number",
+			"default_value": "15",
 			"minimum": 1
 		},
 		{
@@ -306,10 +294,10 @@
 			"category": "visualization",
 			"name": "Pathway Label Max Length",
 			"param_name": "pathway_axis_label_max_length",
-			"help_text": "Maximum characters for pathway labels",
+			"description": "Maximum character length for pathway names",
 			"type": "text",
-			"value_type": "integer",
-			"default_value": "50",
+			"value_type": "number",
+			"default_value": "45",
 			"minimum": 10
 		},
 		{
@@ -317,21 +305,21 @@
 			"category": "visualization",
 			"name": "Pathway Label Font Size",
 			"param_name": "pathway_axis_label_font_size",
-			"help_text": "Font size for pathway axis labels",
+			"description": "Font size for pathway labels",
 			"type": "text",
-			"value_type": "integer",
-			"default_value": "15",
-			"minimum": 8
+			"value_type": "number",
+			"default_value": "14",
+			"minimum": 1
 		},
 		{
 			"id": "tTM3hjfSFOdT6Mef",
 			"category": "visualization",
 			"name": "X-Axis Title Font Size",
 			"param_name": "x_axis_title_font_size",
-			"help_text": "Font size for x-axis title",
+			"description": "Font size for x-axis title",
 			"type": "text",
-			"value_type": "integer",
-			"default_value": "20",
+			"value_type": "number",
+			"default_value": "14",
 			"minimum": 1
 		},
 		{
@@ -339,10 +327,10 @@
 			"category": "visualization",
 			"name": "Y-Axis Title Font Size",
 			"param_name": "y_axis_title_font_size",
-			"help_text": "Font size for y-axis title",
+			"description": "Font size for y-axis title",
 			"type": "text",
-			"value_type": "integer",
-			"default_value": "20",
+			"value_type": "number",
+			"default_value": "14",
 			"minimum": 1
 		},
 		{
@@ -350,10 +338,10 @@
 			"category": "visualization",
 			"name": "X-Axis Tick Font Size",
 			"param_name": "x_axis_tick_font_size",
-			"help_text": "Font size for x-axis tick labels",
+			"description": "Font size for x-axis tick labels",
 			"type": "text",
-			"value_type": "integer",
-			"default_value": "15",
+			"value_type": "number",
+			"default_value": "14",
 			"minimum": 1
 		},
 		{
@@ -361,21 +349,17 @@
 			"category": "visualization",
 			"name": "Plot Top Pathways Up",
 			"param_name": "plot_top_pathways_up",
-			"help_text": "Plot top upregulated pathways",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "TRUE",
-			"extra_data": [
-				"TRUE",
-				"FALSE"
-			]
+			"description": "Plot top upregulated pathways",
+			"type": "text",
+			"value_type": "boolean",
+			"default_value": "TRUE"
 		},
 		{
 			"id": "EJ8s1DE5pV0dO4Aj",
 			"category": "visualization",
 			"name": "Custom Pathways Up",
 			"param_name": "pathways_to_use_up",
-			"help_text": "Comma-separated list of specific upregulated pathways to plot (overrides top selection)",
+			"description": "Comma-separated list of specific upregulated pathways to plot (overrides top selection)",
 			"type": "text",
 			"value_type": "string"
 		},
@@ -384,21 +368,17 @@
 			"category": "visualization",
 			"name": "Plot Top Pathways Down",
 			"param_name": "plot_top_pathways_down",
-			"help_text": "Plot top downregulated pathways",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "TRUE",
-			"extra_data": [
-				"TRUE",
-				"FALSE"
-			]
+			"description": "Plot top downregulated pathways",
+			"type": "text",
+			"value_type": "boolean",
+			"default_value": "TRUE"
 		},
 		{
 			"id": "BQmpF96fqHV3kkJN",
 			"category": "visualization",
 			"name": "Custom Pathways Down",
 			"param_name": "pathways_to_use_down",
-			"help_text": "Comma-separated list of specific downregulated pathways to plot (overrides top selection)",
+			"description": "Comma-separated list of specific downregulated pathways to plot (overrides top selection)",
 			"type": "text",
 			"value_type": "string"
 		},
@@ -407,7 +387,7 @@
 			"category": "visualization",
 			"name": "Sort Bubble Plot By",
 			"param_name": "sort_bubble_plot_by",
-			"help_text": "Variable to sort bubble plot by",
+			"description": "Variable to sort bubble plot by",
 			"type": "list",
 			"value_type": "string",
 			"default_value": "percent gene hits per pathway",
@@ -422,7 +402,7 @@
 			"category": "visualization",
 			"name": "Bubble Size Variable",
 			"param_name": "plot_bubble_size",
-			"help_text": "Variable to use for bubble size",
+			"description": "Variable to use for bubble size",
 			"type": "list",
 			"value_type": "string",
 			"default_value": "number of hits",
@@ -437,7 +417,7 @@
 			"category": "visualization",
 			"name": "Bubble Color Variable",
 			"param_name": "plot_bubble_color",
-			"help_text": "Variable to use for bubble color",
+			"description": "Variable to use for bubble color",
 			"type": "list",
 			"value_type": "string",
 			"default_value": "Fisher's Exact pval",
@@ -452,7 +432,7 @@
 			"category": "visualization",
 			"name": "Bubble Colors",
 			"param_name": "bubble_colors",
-			"help_text": "Color scheme for bubble plots",
+			"description": "Color scheme for bubble plots",
 			"type": "list",
 			"value_type": "string",
 			"default_value": "blues",
@@ -468,7 +448,7 @@
 			"category": "visualization",
 			"name": "Bar Plot Color",
 			"param_name": "color_for_bar",
-			"help_text": "Color scheme for bar plots",
+			"description": "Color scheme for bar plots",
 			"type": "list",
 			"value_type": "string",
 			"default_value": "GreentoBlue",
@@ -483,10 +463,10 @@
 			"category": "visualization",
 			"name": "Plot Width",
 			"param_name": "export_plot_width",
-			"help_text": "Plot width in inches",
+			"description": "Plot width in inches",
 			"type": "text",
 			"value_type": "number",
-			"default_value": "12",
+			"default_value": "14",
 			"minimum": 4
 		},
 		{
@@ -494,10 +474,10 @@
 			"category": "visualization",
 			"name": "Plot Height",
 			"param_name": "export_plot_height",
-			"help_text": "Plot height in inches",
+			"description": "Plot height in inches",
 			"type": "text",
 			"value_type": "number",
-			"default_value": "12",
+			"default_value": "16",
 			"minimum": 4
 		}
 	]
