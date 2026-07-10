@@ -3,7 +3,7 @@
 	"named_parameters": true,
 	"general": {
 		"title": "L2P Analysis (Single)",
-		"instructions": "All input data uses mount name 'deg_table'. Attach your dataset with mount name 'deg_table' to replace the demo.\n\n- **(blank)**: auto-detects a single flat file or RDS from mount 'deg_table'\n- **Table**: same as blank - auto-detects a flat file from mount 'deg_table'\n- **Filtered DEG**: MOSuite moo-properties asset (mount 'deg_table') - after 'filter differential expression'\n- **All DEG** (default): MOSuite moo-properties asset (mount 'deg_table') - after 'differential expression analysis'\n\nSet 'Comparison' to the comparison ID in your data. Configure Basic Settings and run."
+		"instructions": "All input data uses mount name 'deg_table'. Attach your dataset with mount name 'deg_table' to replace the demo.\n\n- (blank): auto-detects a single flat file or RDS from mount 'deg_table'\n- Table: same as blank - auto-detects a flat file from mount 'deg_table'\n- Filtered DEG: MOSuite moo-properties asset (mount 'deg_table') - after 'filter differential expression'\n- All DEG (default): MOSuite moo-properties asset (mount 'deg_table') - after 'differential expression analysis'\n\nSet 'Comparison' to the comparison ID in your data. Configure Basic Settings and run."
 	},
 	"datasets": [
 		{
@@ -50,7 +50,7 @@
 			"category": "basic",
 			"name": "DEG Table File",
 			"param_name": "deg_file",
-			"description": "Select the differential analysis input type. **Table** - uses a single flat table with differential analysis information. **Filtered DEG** - uses data from Filter Differential Analysis. **All DEG** - uses data from Differential Expression Analysis.",
+			"description": "Select the differential analysis input type. Table - uses a single flat table with differential analysis information. Filtered DEG - uses data from Filter Differential Analysis. All DEG - uses data from Differential Expression Analysis.",
 			"help_text": "Select the input mode for the attached deg_table data asset. Flat table modes support CSV/TSV/TXT/RDS files.",
 			"type": "list",
 			"value_type": "string",
