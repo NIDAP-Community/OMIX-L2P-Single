@@ -50,7 +50,7 @@
 			"category": "basic",
 			"name": "DEG Table File",
 			"param_name": "deg_file",
-			"description": "Input mode for mount 'deg_table'. Blank / Table auto-detects a flat CSV/TSV/TXT/RDS file. Filtered DEG loads diff_filt.csv. All DEG (default) loads diff_{comparison}.csv for the selected Comparison.",
+			"description": "Select the differential analysis input type. **Table** - uses a single flat table with differential analysis information. **Filtered DEG** - uses data from Filter Differential Analysis. **All DEG** - uses data from Differential Expression Analysis.",
 			"help_text": "Select the input mode for the attached deg_table data asset. Flat table modes support CSV/TSV/TXT/RDS files.",
 			"type": "list",
 			"value_type": "string",
