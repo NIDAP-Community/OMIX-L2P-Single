@@ -1,4 +1,3 @@
-metadata_version: 1
 name: OMIX L2P Single
 description: List to pathways (L2P) over-representation analysis for differential
   expression results. Uses Fisher's exact test to identify enriched pathways in gene
@@ -7,17 +6,18 @@ description: List to pathways (L2P) over-representation analysis for differentia
   options. Includes demo dataset (Mouse RNA-seq) for easy testing - runs automatically
   if no input file is provided. Part of the OMIX analysis suite.
 tags:
-- OMIX
-- pathway-analysis
-- enrichment
-- gene-sets
-- bioinformatics
-- R
-- Bulk RNA-seq
-- Differential expression
-- MSigDB
-- L2P
-- Fisher exact test
-- over-representation
+  - OMIX
+  - pathway-analysis
+  - enrichment
+  - gene-sets
+  - bioinformatics
+  - R
+  - Bulk RNA-seq
+  - Differential expression
+  - MSigDB
+  - L2P
+  - Fisher exact test
+  - over-representation
 authors:
-- name: Maggie Cam
+  - name: Maggie Cam
+  - name: Philip Homan
