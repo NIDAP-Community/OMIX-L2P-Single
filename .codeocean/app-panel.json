@@ -96,7 +96,7 @@
 			"category": "basic",
 			"name": "Pathway Collections",
 			"param_name": "collections_to_include",
-			"description": "Type one or more database codes. To run multiple databases together, join codes with commas and no spaces (e.g. H,REACTOME,KEGG). Available codes: H (Hallmark, 50 gene sets, fastest), GO, REACTOME, KEGG, WikiPathways, C2, C3, C5, C7, C8.",
+			"description": "Type one or more database codes. To run multiple databases together, join codes with commas and no spaces (e.g. H,REACTOME,KEGG). Common codes: H = Hallmark gene sets; GO = Gene Ontology; REACTOME = Reactome pathways; KEGG = KEGG pathways; WikiPathways = WikiPathways gene sets; PANTH = PANTHER pathways; PID = Pathway Interaction Database; BIOCYC = BioCyc pathways; C1 = MSigDB positional gene sets; C2 = MSigDB curated gene sets; C3 = MSigDB motif/regulatory target gene sets; C4 = MSigDB computational gene sets; C5 = MSigDB Gene Ontology gene sets; C6 = MSigDB oncogenic signatures; C7 = MSigDB immunologic signatures; C8 = MSigDB cell type signatures.",
 			"type": "text",
 			"value_type": "string",
 			"default_value": "H"
