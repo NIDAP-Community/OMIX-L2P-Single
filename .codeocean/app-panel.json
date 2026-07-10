@@ -3,7 +3,7 @@
 	"named_parameters": true,
 	"general": {
 		"title": "L2P Analysis (Single)",
-		"instructions": "START HERE:\n1. **Try with demo data**: Leave 'DEG Table File' blank to automatically use the attached Mouse RNA-seq demo dataset (comparison 'B-A')\n2. **Or upload your own**: Use the 'DEG Table File' parameter to upload your DEG results (RDS/CSV/TSV)\n3. Specify the 'Comparison' to analyze (e.g., 'B-A', 'C-A', 'Treatment-Control')\n4. Configure Basic Settings and run\n\nAdvanced users can customize gene selection, pathway filtering, visualization, or use custom pathway databases."
+		"instructions": "All input data uses mount name 'deg_table'. Attach your dataset with mount name 'deg_table' to replace the demo.\n\n- **(blank)**: auto-detects a single flat file or RDS from mount 'deg_table'\n- **Table**: same as blank - auto-detects a flat file from mount 'deg_table'\n- **Filtered DEG**: MOSuite moo-properties asset (mount 'deg_table') - after 'filter differential expression'\n- **All DEG** (default): MOSuite moo-properties asset (mount 'deg_table') - after 'differential expression analysis'\n\nSet 'Comparison' to the comparison ID to analyze. Configure Basic Settings and run."
 	},
 	"datasets": [
 		{
@@ -50,9 +50,17 @@
 			"category": "basic",
 			"name": "DEG Table File",
 			"param_name": "deg_file",
-			"help_text": "Upload your differential expression file (RDS/CSV/TSV). Leave blank to automatically use the attached demo dataset.",
-			"type": "file",
-			"value_type": "string"
+			"description": "Input mode. All modes read from mount 'deg_table'. Attach your dataset with mount name 'deg_table' to replace the demo data.",
+			"help_text": "Blank / Table: auto-detect a flat DEG table (CSV/TSV/RDS) from /data/deg_table/.\n\nFiltered DEG: MOSuite moo-properties asset at mount 'deg_table'. Loads analyses/diff_filt.csv - filtered genes, all comparisons combined. Use after 'MOSuite - filter differential expression' capsule.\n\nAll DEG: MOSuite moo-properties asset at mount 'deg_table'. Loads diff_{comparison}.csv for the selected Comparison. Use after 'MOSuite - differential expression analysis' capsule.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "All DEG",
+			"extra_data": [
+				"",
+				"Table",
+				"Filtered DEG",
+				"All DEG"
+			]
 		},
 		{
 			"id": "CbsRhmV9N1w60PJW",

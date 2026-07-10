@@ -22,23 +22,29 @@ L2P (List to pathways) performs over-representation analysis to identify biologi
 
 ### Data Asset: DEG Table
 
-Attach a data asset containing differential expression results with:
+Attach a data asset with mount name `deg_table`. The capsule supports the same Code Ocean input modes as OMIX L2P Multi:
+
+- **All DEG** (default): reads MOSuite moo-properties output from differential expression analysis by finding `diff_{comparison}.csv` under `/data`
+- **Filtered DEG**: reads MOSuite filtered differential expression output by finding `diff_filt.csv` under `/data`
+- **Table** or blank: auto-detects one flat table or RDS file under `/data/deg_table`
+
+The selected data source should contain differential expression results with:
 
 - **Gene names** (e.g., HGNC symbols)
 - **Statistical measures** (t-statistics, p-values)
 - **Fold changes** (linear or log scale)
 
-**Supported formats**: RDS, CSV, TSV
+**Supported formats**: RDS, CSV, TSV, TXT
 
 **Expected columns** (auto-detected with override options):
-- `Gene`, `gene`, `symbol` (or custom) → Gene names
-- `{comparison}_tstat` → t-statistics for ranking
-- `{comparison}_pval` → p-values for filtering
-- `{comparison}_FC` → fold changes for filtering
+- `GeneName`, `Gene`, `gene`, `symbol` (or custom) → Gene names
+- `tstat` or `{comparison}_tstat` → t-statistics for ranking
+- `adjpval`, `pval`, or `{comparison}_pval` → p-values for filtering
+- `FC`, `logFC`, or `{comparison}_FC` → fold changes for filtering
 
 ### Required Parameters
 
-**Comparison** - Which comparison to analyze (e.g., 'B-A', 'C-A', 'Treatment-Control'). Must match the column prefix in your DEG table.
+**Comparison** - Which comparison to analyze (e.g., 'B-A', 'C-A', 'Treatment-Control'). In All DEG mode this selects `diff_{comparison}.csv`; for wide tables it should match the column prefix in your DEG table.
 
 ## Usage
 
@@ -46,6 +52,7 @@ Attach a data asset containing differential expression results with:
 
 1. **Attach your DEG table** as a data asset
 2. **Fill in Basic Settings**:
+   - **DEG Table File**: keep default "All DEG" for MOSuite differential expression output, or choose "Table" for a flat table
    - **Comparison**: e.g., "B-A" (matches your column prefixes)
    - **Species**: Select from Human, Mouse, Rat, etc.
    - **Pathway Collections**: Keep default "GO,REACTOME,KEGG" or customize

@@ -54,7 +54,7 @@ log_time("Loaded optparse library")
 # Define command-line options (all function parameters exposed)
 option_list <- list(
   # Basic settings
-  make_option("--deg_file", type="character", default=NULL, help="Upload DEG file (CSV, TSV, or RDS)"),
+  make_option("--deg_file", type="character", default=NULL, help="Input mode or uploaded DEG file (CSV, TSV, TXT, or RDS)"),
   make_option("--comparison", type="character", default=NULL, help="Comparison to analyze"),
   make_option("--species", type="character", default="Human", help="Species [default %default]"),
   make_option("--collections_to_include", type="character", default="GO,REACTOME,KEGG", help="Pathway collections [default %default]"),
@@ -146,78 +146,228 @@ if (is.null(opt$comparison) || opt$comparison == "") {
   stop("ERROR: 'Comparison' parameter is required. Please specify which comparison to analyze (e.g., 'B-A', 'C-A').")
 }
 
-# Find and read DEG table: uploaded file > data asset (priority-based loading)
+# Find and read DEG table: uploaded file > selected data asset mode
 log_time("Starting data loading")
 
 deg_data <- NULL
 deg_table_path <- NULL
 
-# Priority 1: Check for uploaded file
-if (!is.null(opt$deg_file) && opt$deg_file != "" && file.exists(opt$deg_file)) {
-  deg_table_path <- opt$deg_file
-  cat(sprintf("Loading DEG table from uploaded file: %s\n", deg_table_path))
-  
-  file_ext <- tolower(tools::file_ext(deg_table_path))
-  if (file_ext == "rds") {
-    deg_data <- readRDS(deg_table_path)
-    log_time("Loaded uploaded RDS file")
-    
-    # If RDS contains a list, extract the data frame
-    if (is.list(deg_data) && !is.data.frame(deg_data)) {
-      df_elements <- sapply(deg_data, is.data.frame)
-      if (any(df_elements)) {
-        deg_data <- deg_data[[which(df_elements)[1]]]
-        cat("Extracted data frame from list\n")
-      } else {
-        stop("ERROR: RDS file does not contain a data frame")
-      }
-    }
-  } else if (file_ext == "csv") {
-    deg_data <- read.csv(deg_table_path, stringsAsFactors = FALSE, check.names = FALSE)
-    log_time("Loaded uploaded CSV file")
+load_flat_file <- function(path) {
+  file_ext <- tolower(tools::file_ext(path))
+  if (file_ext == "csv") {
+    read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
+  } else if (file_ext %in% c("tsv", "txt")) {
+    read.delim(path, stringsAsFactors = FALSE, check.names = FALSE)
   } else {
-    # Assume TSV/TXT
-    deg_data <- read.delim(deg_table_path, stringsAsFactors = FALSE, check.names = FALSE)
-    log_time("Loaded uploaded TSV/TXT file")
+    stop(sprintf("ERROR: File must be .rds, .csv, .tsv, or .txt: %s", path))
   }
 }
 
-# Priority 2: Check for data asset at /data/deg_table/
-if (is.null(deg_data)) {
-  cat("No uploaded file found. Looking for DEG table in /data/deg_table/...\n")
-  rds_files <- list.files("/data/deg_table", pattern = "\\.rds$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
-  csv_files <- list.files("/data/deg_table", pattern = "\\.(csv|tsv|txt)$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
-  
-  if (length(rds_files) > 0) {
-    deg_table_path <- rds_files[1]
-    cat(sprintf("Loading DEG table from RDS file: %s\n", deg_table_path))
-    deg_data <- readRDS(deg_table_path)
-    log_time("Loaded RDS file")
-    
-    # If RDS contains a list, extract the data frame
-    if (is.list(deg_data) && !is.data.frame(deg_data)) {
-      df_elements <- sapply(deg_data, is.data.frame)
-      if (any(df_elements)) {
-        deg_data <- deg_data[[which(df_elements)[1]]]
-        cat("Extracted data frame from list\n")
-      } else {
-        stop("ERROR: RDS file does not contain a data frame")
-      }
+load_rds_as_df <- function(path) {
+  obj <- readRDS(path)
+  if (is.data.frame(obj)) {
+    return(obj)
+  }
+  if (is.list(obj)) {
+    df_elements <- sapply(obj, is.data.frame)
+    if (any(df_elements)) {
+      cat("Extracted data frame from list\n")
+      return(obj[[which(df_elements)[1]]])
     }
-    
-  } else if (length(csv_files) > 0) {
-    deg_table_path <- csv_files[1]
-    cat(sprintf("Loading DEG table from CSV/TSV file: %s\n", deg_table_path))
-    
-    file_ext <- tolower(tools::file_ext(deg_table_path))
-    if (file_ext == "csv") {
-      deg_data <- read.csv(deg_table_path, stringsAsFactors = FALSE, check.names = FALSE)
-    } else {
-      deg_data <- read.delim(deg_table_path, stringsAsFactors = FALSE, check.names = FALSE)
-    }
-    log_time("Loaded CSV/TSV file")
+  }
+  stop(sprintf("ERROR: RDS file does not contain a data frame: %s", path))
+}
+
+load_deg_file <- function(path) {
+  file_ext <- tolower(tools::file_ext(path))
+  if (file_ext == "rds") {
+    load_rds_as_df(path)
   } else {
-    stop("ERROR: No DEG table provided. Please upload a file or attach a DEG table data asset.")
+    load_flat_file(path)
+  }
+}
+
+warn_gene_duplicates <- function(df, gene_col, file_label) {
+  if (is.null(gene_col) || !gene_col %in% colnames(df)) {
+    return(invisible(NULL))
+  }
+
+  dups <- df[[gene_col]][duplicated(df[[gene_col]])]
+  if (length(dups) > 0) {
+    uniq_dups <- unique(dups)
+    sample_str <- paste(head(uniq_dups, 5), collapse = ", ")
+    if (length(uniq_dups) > 5) {
+      sample_str <- paste0(sample_str, " ...")
+    }
+    cat(sprintf(
+      "\nWARNING: %d duplicate value(s) in '%s' column of '%s': %s\n\n",
+      length(dups), gene_col, file_label, sample_str
+    ))
+  }
+}
+
+find_named_csv <- function(base_dir, filename, mode_label) {
+  all_csv <- list.files(
+    base_dir,
+    pattern = "\\.csv$",
+    full.names = TRUE,
+    recursive = TRUE,
+    ignore.case = TRUE
+  )
+  matches <- all_csv[tolower(basename(all_csv)) == tolower(filename)]
+  if (length(matches) == 0) {
+    stop(sprintf(
+      "ERROR: '%s' mode could not find '%s' under %s.",
+      mode_label, filename, base_dir
+    ))
+  }
+  if (length(matches) > 1) {
+    cat(sprintf("  Multiple '%s' files found; using: %s\n", filename, matches[1]))
+  }
+  matches[1]
+}
+
+first_existing_column <- function(candidates, available_cols) {
+  candidates <- candidates[!is.na(candidates) & nzchar(candidates)]
+  match <- candidates[candidates %in% available_cols]
+  if (length(match) > 0) {
+    return(match[1])
+  }
+  NULL
+}
+
+set_default_column_override <- function(param_name, candidates, mode_label) {
+  current_value <- opt[[param_name]]
+  if (!is.null(current_value) && nzchar(trimws(current_value))) {
+    return(invisible(NULL))
+  }
+
+  selected <- first_existing_column(candidates, colnames(deg_data))
+  if (!is.null(selected)) {
+    opt[[param_name]] <<- selected
+    cat(sprintf("  %s mode: using %s='%s'\n", mode_label, param_name, selected))
+  }
+}
+
+# Priority 1: Check for uploaded file path. Code Ocean mode strings such as
+# "All DEG" and "Filtered DEG" are intentionally not treated as file paths.
+if (!is.null(opt$deg_file) && opt$deg_file != "" && file.exists(opt$deg_file)) {
+  deg_table_path <- opt$deg_file
+  cat(sprintf("Loading DEG table from uploaded file: %s\n", deg_table_path))
+  deg_data <- load_deg_file(deg_table_path)
+  log_time("Loaded uploaded DEG file")
+}
+
+# Priority 2: Check selected data mode against attached data assets.
+if (is.null(deg_data)) {
+  deg_input_mode <- ""
+  if (!is.null(opt$deg_file) && nchar(trimws(opt$deg_file)) > 0) {
+    candidate <- trimws(opt$deg_file)
+    if (tolower(candidate) %in% c("filtered deg", "all deg", "table")) {
+      deg_input_mode <- tolower(candidate)
+      cat(sprintf("DEG Table File mode: '%s'\n", candidate))
+    }
+  }
+
+  csv_files <- list.files(
+    "/data/deg_table",
+    pattern = "\\.(csv|tsv|txt)$",
+    full.names = TRUE,
+    recursive = TRUE,
+    ignore.case = TRUE
+  )
+  rds_files <- list.files(
+    "/data/deg_table",
+    pattern = "\\.rds$",
+    full.names = TRUE,
+    recursive = TRUE,
+    ignore.case = TRUE
+  )
+
+  if (deg_input_mode == "filtered deg") {
+    cat("  Mode: Filtered DEG - searching for diff_filt.csv under /data\n")
+    deg_table_path <- find_named_csv("/data", "diff_filt.csv", "Filtered DEG")
+    deg_data <- load_flat_file(deg_table_path)
+    log_time("Loaded diff_filt.csv")
+
+  } else if (deg_input_mode == "all deg") {
+    if (is.null(opt$comparison) || !nzchar(trimws(opt$comparison))) {
+      stop("ERROR: 'All DEG' mode requires the 'Comparison' parameter.")
+    }
+    comp <- trimws(opt$comparison)
+    target <- paste0("diff_", comp, ".csv")
+    cat(sprintf("  Mode: All DEG - searching for %s under /data\n", target))
+    deg_table_path <- find_named_csv("/data", target, "All DEG")
+    deg_data <- load_flat_file(deg_table_path)
+    log_time(sprintf("Loaded %s", target))
+
+    set_default_column_override(
+      "gene_names_column",
+      c("GeneName", "Gene", "gene", "symbol", "Symbol", "gene_name", "gene_symbol", "GeneSymbol"),
+      "All DEG"
+    )
+    set_default_column_override(
+      "t_statistic_column",
+      c("tstat", paste0(comp, "_tstat"), "t.stat", "t_stat", "stat"),
+      "All DEG"
+    )
+    set_default_column_override(
+      "significance_column",
+      c("adjpval", "pval", paste0(comp, "_adjpval"), paste0(comp, "_pval"), "padj", "FDR"),
+      "All DEG"
+    )
+    set_default_column_override(
+      "fold_change_column",
+      c("FC", "logFC", paste0(comp, "_FC"), paste0(comp, "_logFC"), "fc", "FoldChange"),
+      "All DEG"
+    )
+
+  } else {
+    if (deg_input_mode == "table") {
+      cat("  Mode: Table - auto-detecting flat DEG table in /data/deg_table\n")
+    } else {
+      cat("No uploaded file or explicit mode found. Looking for DEG table in /data/deg_table/...\n")
+      cat(sprintf(
+        "  Found %d flat file(s) [CSV/TSV/TXT] and %d RDS file(s)\n",
+        length(csv_files), length(rds_files)
+      ))
+    }
+
+    if (length(csv_files) == 1) {
+      deg_table_path <- csv_files[1]
+      cat(sprintf("Loading DEG table from flat file: %s\n", deg_table_path))
+      deg_data <- load_flat_file(deg_table_path)
+      log_time("Loaded flat file")
+    } else if (length(csv_files) > 1) {
+      comp <- trimws(opt$comparison)
+      scores <- sapply(csv_files, function(path) {
+        as.integer(grepl(comp, path, fixed = TRUE))
+      })
+      deg_table_path <- if (max(scores) > 0) {
+        csv_files[scores == max(scores)][1]
+      } else {
+        csv_files[1]
+      }
+      cat(sprintf("Multiple flat files found; loading: %s\n", deg_table_path))
+      deg_data <- load_flat_file(deg_table_path)
+      log_time("Loaded selected flat file")
+    } else if (length(rds_files) == 1) {
+      deg_table_path <- rds_files[1]
+      cat(sprintf("Loading DEG table from RDS file: %s\n", deg_table_path))
+      deg_data <- load_rds_as_df(deg_table_path)
+      log_time("Loaded RDS file")
+    } else if (length(rds_files) > 1) {
+      deg_table_path <- rds_files[1]
+      cat(sprintf("Multiple RDS files found; loading first: %s\n", deg_table_path))
+      deg_data <- load_rds_as_df(deg_table_path)
+      log_time("Loaded selected RDS file")
+    } else {
+      stop(paste0(
+        "ERROR: No DEG table found. Attach a flat table with mount name ",
+        "'deg_table', or use 'All DEG'/'Filtered DEG' with a MOSuite ",
+        "moo-properties asset."
+      ))
+    }
   }
 }
 
@@ -227,7 +377,16 @@ if (!is.data.frame(deg_data)) {
 }
 
 cat(sprintf("Loaded DEG table: %d rows x %d columns\n", nrow(deg_data), ncol(deg_data)))
+if (!is.null(deg_table_path)) {
+  cat(sprintf("Loaded DEG table path/mode: %s\n", deg_table_path))
+}
 cat(sprintf("Available columns: %s\n\n", paste(colnames(deg_data), collapse=", ")))
+
+warn_gene_duplicates(
+  deg_data,
+  opt$gene_names_column,
+  if (!is.null(deg_table_path)) basename(deg_table_path) else "DEG table"
+)
 
 # ===== ENVIRONMENT & DATABASE VERSION INFO =====
 cat("\n======================================\n")
@@ -303,7 +462,7 @@ if (!is.null(opt$gene_names_column) && opt$gene_names_column != "") {
   cat(sprintf("Using user-specified gene name column: '%s'\n", gene_names_column))
 } else {
   # Auto-detect
-  gene_col_candidates <- c("Gene", "gene", "symbol", "Symbol", "gene_name", "gene_symbol", "GeneSymbol")
+  gene_col_candidates <- c("GeneName", "Gene", "gene", "symbol", "Symbol", "gene_name", "gene_symbol", "GeneSymbol")
   gene_names_column <- NULL
   for (col in gene_col_candidates) {
     if (col %in% colnames(deg_data)) {
@@ -333,7 +492,13 @@ if (!is.null(opt$significance_column) && opt$significance_column != "") {
 } else {
   # Try to auto-detect based on comparison
   sig_candidates <- c(
+    "adjpval",
+    "pval",
+    "padj",
+    "FDR",
+    paste0(opt$comparison, "_adjpval"),
     paste0(opt$comparison, "_pval"),
+    paste0(opt$comparison, "_padj"),
     paste0(opt$comparison, "_pvalue"),
     paste0(opt$comparison, "_p.value"),
     paste0(opt$comparison, "_FDR")
@@ -364,6 +529,10 @@ if (!is.null(opt$fold_change_column) && opt$fold_change_column != "") {
 } else {
   # Try to auto-detect based on comparison
   fc_candidates <- c(
+    "FC",
+    "logFC",
+    "fc",
+    "FoldChange",
     paste0(opt$comparison, "_FC"),
     paste0(opt$comparison, "_fc"),
     paste0(opt$comparison, "_FoldChange"),
@@ -395,6 +564,10 @@ if (!is.null(opt$t_statistic_column) && opt$t_statistic_column != "") {
 } else {
   # Try to auto-detect based on comparison
   rank_candidates <- c(
+    "tstat",
+    "t.stat",
+    "t_stat",
+    "stat",
     paste0(opt$comparison, "_tstat"),
     paste0(opt$comparison, "_t.stat"),
     paste0(opt$comparison, "_t_stat"),
