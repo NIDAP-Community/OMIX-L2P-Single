@@ -25,6 +25,7 @@ write.csv(
   data.frame(
     GeneName = c("GeneA", "GeneB"),
     `B-A_tstat` = c(1, -1),
+    `B-A_pval` = c(0.001, 0.002),
     `B-A_adjpval` = c(0.01, 0.02),
     `B-A_FC` = c(2, -2),
     check.names = FALSE
@@ -39,7 +40,7 @@ columns <- resolve_workflow_deg_columns(read.csv(deg_path, check.names = FALSE),
 stopifnot(
   identical(columns$gene_names_column, "GeneName"),
   identical(columns$t_statistic_column, "B-A_tstat"),
-  identical(columns$significance_column, "B-A_adjpval"),
+  identical(columns$significance_column, "B-A_pval"),
   identical(columns$fold_change_column, "B-A_FC")
 )
 

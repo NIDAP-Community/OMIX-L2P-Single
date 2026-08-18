@@ -387,7 +387,7 @@ if (is.null(deg_data)) {
     )
     set_default_column_override(
       "significance_column",
-      c("adjpval", "pval", paste0(comp, "_adjpval"), paste0(comp, "_pval"), "padj", "FDR"),
+      c("pval", "adjpval", paste0(comp, "_pval"), paste0(comp, "_adjpval"), "padj", "FDR"),
       "All DEG"
     )
     set_default_column_override(
@@ -566,12 +566,12 @@ if (!is.null(opt$significance_column) && opt$significance_column != "") {
 } else {
   # Try to auto-detect based on comparison
   sig_candidates <- c(
-    "adjpval",
     "pval",
+    "adjpval",
     "padj",
     "FDR",
-    paste0(opt$comparison, "_adjpval"),
     paste0(opt$comparison, "_pval"),
+    paste0(opt$comparison, "_adjpval"),
     paste0(opt$comparison, "_padj"),
     paste0(opt$comparison, "_pvalue"),
     paste0(opt$comparison, "_p.value"),

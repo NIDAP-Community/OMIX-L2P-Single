@@ -115,7 +115,7 @@ resolve_workflow_deg_columns <- function(df, comparison) {
     ),
     significance_column = first_comparison_column(
       comparison,
-      c("_adjpval", "_pval", "_padj", "_pvalue", "_p.value", "_FDR"),
+      c("_pval", "_adjpval", "_padj", "_pvalue", "_p.value", "_FDR"),
       colnames(df)
     ),
     fold_change_column = first_comparison_column(

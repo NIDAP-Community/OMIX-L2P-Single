@@ -47,7 +47,7 @@ The selected data source should contain differential expression results with:
 **Expected columns** (auto-detected with override options):
 - `GeneName`, `Gene`, `gene`, `symbol` (or custom) → Gene names
 - `tstat` or `{comparison}_tstat` → t-statistics for ranking
-- `adjpval`, `pval`, or `{comparison}_pval` → p-values for filtering
+- `pval` (preferred default), `adjpval`, or `{comparison}_pval` → p-values for filtering
 - `FC`, `logFC`, or `{comparison}_FC` → fold changes for filtering
 
 ### Required Parameters
