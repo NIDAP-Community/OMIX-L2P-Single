@@ -51,3 +51,13 @@ inferred DEG columns before pathway analysis begins.
 Use a comparison that exists in `DEG_Analysis.csv`. To test error handling,
 temporarily copy or rename files inside this ignored debug fixture; do not
 alter the original archive.
+
+## Run workflow-input checks
+
+The adapter test verifies that a unique `DEG` CSV is preferred, non-DEG CSV
+artifacts are ignored, multiple DEG candidates fail clearly, and a uniquely
+named `moo-diff.rds` remains available as a fallback:
+
+```bash
+Rscript tests/test-workflow-input.R
+```

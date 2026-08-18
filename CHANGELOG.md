@@ -8,6 +8,9 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
 ## [Unreleased]
 
 ### Added
+- A local adapter workflow-input test suite covering preferred `DEG` CSV
+  discovery, ambiguity errors, inferred B-A columns, and the uniquely named
+  `moo-diff.rds` fallback.
 - Metadata tag improvements for better discoverability (2026-01-08)
   - Added "MSigDB" tag (tool supports MSigDB H and C collections)
   - Added "gene-sets" tag
