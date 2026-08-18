@@ -1,5 +1,13 @@
 # OMIX L2P Analysis (Single)
 
+## Related repositories
+
+This repository is the **Code Ocean deployment adapter** for L2P Single. The
+platform-neutral source, CLI, tests, and interface schema are maintained in
+the canonical [OMIX L2P Single module](https://github.com/NIDAP-Community/OMIX/tree/main/modules/OMIX-L2P-Single).
+Read the [OMIX module contract](https://github.com/NIDAP-Community/OMIX/blob/main/docs/module-contract.md#code-ocean-deployment-adapters)
+before changing shared scientific behavior.
+
 ## Overview
 
 **Version**: v4.0 | **Part of the OMIX analysis suite**
