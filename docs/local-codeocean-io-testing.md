@@ -42,9 +42,11 @@ The runner mounts:
 | `results/debug-codeocean-workflow/` | `/results` | Local test outputs |
 
 No `--deg_file` argument is supplied, so `code/main.R` follows its workflow
-input path: recursively discover exactly one CSV under `/data`, or—if no CSV
-exists—exactly one `moo-diff.rds` file. The log should report the selected
-workflow file and inferred DEG columns before pathway analysis begins.
+input path: recursively discover exactly one CSV whose filename matches the
+case-insensitive regex `DEG` under `/data`, or—if no such CSV exists—exactly
+one `moo-diff.rds` file. Other CSV files, such as a package inventory, are not
+treated as DEG input. The log should report the selected workflow file and
+inferred DEG columns before pathway analysis begins.
 
 Use a comparison that exists in `DEG_Analysis.csv`. To test error handling,
 temporarily copy or rename files inside this ignored debug fixture; do not

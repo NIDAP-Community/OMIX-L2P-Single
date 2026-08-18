@@ -26,6 +26,10 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
 - Keyword footer to `/code/README.md` for visual branding (2026-07-08)
 
 ### Changed
+- Workflow input discovery now selects exactly one CSV whose filename matches
+  the case-insensitive regex `DEG`, avoiding non-DEG workflow artifacts such
+  as package inventories.
+- Aligned the runtime species default with the Code Ocean App Panel (`Mouse`).
 - Data loading logic now supports three input methods:
   1. Direct file upload via App Panel (highest priority)
   2. Data asset attached at `/data/deg_table/` mount point
@@ -37,6 +41,8 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
   - Maintains consistency with concise naming pattern
 
 ### Fixed
+- Non-interactive runs no longer create an implicit `Rplots.pdf` in the code
+  directory; plots are written only to the explicit results path.
 - App Panel now uses named parameters mode (2026-01-08)
   - Passes arguments as `--param value` instead of positional arguments
   - Prevents optparse errors when file uploads are left blank

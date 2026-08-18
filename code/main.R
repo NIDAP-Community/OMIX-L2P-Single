@@ -56,7 +56,7 @@ option_list <- list(
   # Basic settings
   make_option("--deg_file", type="character", default=NULL, help="Input mode or uploaded DEG file (CSV, TSV, TXT, or RDS)"),
   make_option("--comparison", type="character", default=NULL, help="Comparison to analyze"),
-  make_option("--species", type="character", default="Human", help="Species [default %default]"),
+  make_option("--species", type="character", default="Mouse", help="Species [default %default]"),
   make_option("--collections_to_include", type="character", default="GO,REACTOME,KEGG", help="Pathway collections [default %default]"),
   
   # Column overrides
@@ -273,6 +273,130 @@ set_default_column_override <- function(param_name, candidates, mode_label) {
   }
 }
 
+find_workflow_csv <- function() {
+  all_csv <- list.files(
+    "/data",
+    pattern = "\\.csv$",
+    full.names = TRUE,
+    recursive = TRUE,
+    ignore.case = TRUE
+  )
+  matches <- all_csv[grepl("DEG", basename(all_csv), ignore.case = TRUE)]
+
+  if (length(matches) > 1) {
+    stop(
+      "ERROR: Multiple workflow DEG CSV files were found under /data. ",
+      "Specify an uploaded file or provide exactly one CSV whose filename ",
+      "matches the regex 'DEG'.\n",
+      paste(matches, collapse = "\n")
+    )
+  }
+
+  if (length(matches) == 1) matches[1] else NULL
+}
+
+find_workflow_moo_rds <- function() {
+  all_rds <- list.files(
+    "/data",
+    pattern = "\\.rds$",
+    full.names = TRUE,
+    recursive = TRUE,
+    ignore.case = TRUE
+  )
+  matches <- all_rds[tolower(basename(all_rds)) == "moo-diff.rds"]
+
+  if (length(matches) > 1) {
+    stop(
+      "ERROR: Multiple workflow moo-diff.rds files were found under /data.\n",
+      paste(matches, collapse = "\n")
+    )
+  }
+
+  if (length(matches) == 1) matches[1] else NULL
+}
+
+load_workflow_moo_rds <- function(path) {
+  moo <- readRDS(path)
+  diff_tables <- tryCatch(moo@analyses$diff, error = function(e) NULL)
+
+  if (is.null(diff_tables) || !is.list(diff_tables) || length(diff_tables) == 0) {
+    stop(
+      "ERROR: Workflow RDS does not contain MOSuite differential-analysis results: ",
+      path
+    )
+  }
+  if (is.null(names(diff_tables)) || any(!nzchar(names(diff_tables)))) {
+    stop("ERROR: MOSuite differential-analysis results must be named by comparison.")
+  }
+
+  tryCatch(
+    as.data.frame(MOSuite::join_dfs_wide(diff_tables)),
+    error = function(e) {
+      stop(
+        "ERROR: Could not convert workflow moo-diff.rds into a DEG table: ",
+        conditionMessage(e)
+      )
+    }
+  )
+}
+
+first_comparison_column <- function(comparison, suffixes, available_cols) {
+  direct_candidates <- paste0(comparison, suffixes)
+  direct <- first_existing_column(direct_candidates, available_cols)
+  if (!is.null(direct)) {
+    return(direct)
+  }
+
+  prefixed <- available_cols[
+    startsWith(available_cols, paste0(comparison, "_")) &
+      vapply(
+        available_cols,
+        function(column) any(endsWith(column, suffixes)),
+        logical(1)
+      )
+  ]
+  if (length(prefixed) > 0) {
+    return(prefixed[1])
+  }
+
+  first_existing_column(sub("^_", "", suffixes), available_cols)
+}
+
+resolve_workflow_deg_columns <- function(df, comparison) {
+  columns <- list(
+    gene_names_column = first_existing_column(
+      c("GeneName", "Gene", "gene_name", "gene_symbol", "GeneSymbol"),
+      colnames(df)
+    ),
+    t_statistic_column = first_comparison_column(
+      comparison,
+      c("_tstat", "_t.stat", "_t_stat", "_stat"),
+      colnames(df)
+    ),
+    significance_column = first_comparison_column(
+      comparison,
+      c("_adjpval", "_pval", "_padj", "_pvalue", "_p.value", "_FDR"),
+      colnames(df)
+    ),
+    fold_change_column = first_comparison_column(
+      comparison,
+      c("_FC", "_fc", "_FoldChange", "_logFC"),
+      colnames(df)
+    )
+  )
+
+  missing <- names(columns)[vapply(columns, is.null, logical(1))]
+  if (length(missing) > 0) {
+    stop(
+      "ERROR: Workflow input lacks required column(s) for comparison '",
+      comparison, "': ", paste(missing, collapse = ", "),
+      "\nAvailable columns: ", paste(colnames(df), collapse = ", ")
+    )
+  }
+
+  columns
+}
+
 # Priority 1: Check for uploaded file path. Code Ocean mode strings such as
 # "All DEG" and "Filtered DEG" are intentionally not treated as file paths.
 if (!is.null(opt$deg_file) && opt$deg_file != "" && file.exists(opt$deg_file)) {
@@ -282,7 +406,55 @@ if (!is.null(opt$deg_file) && opt$deg_file != "" && file.exists(opt$deg_file)) {
   log_time("Loaded uploaded DEG file")
 }
 
-# Priority 2: Check selected data mode against attached data assets.
+# Priority 2: Use a DEG table from an upstream Code Ocean workflow capsule.
+# Workflow connections mount source results in an implementation-specific
+# subdirectory beneath /data, so search recursively by filename.
+if (is.null(deg_data)) {
+  workflow_csv_path <- find_workflow_csv()
+  workflow_moo_rds_path <- if (is.null(workflow_csv_path)) {
+    find_workflow_moo_rds()
+  } else {
+    NULL
+  }
+
+  if (!is.null(workflow_csv_path) || !is.null(workflow_moo_rds_path)) {
+    deg_table_path <- if (!is.null(workflow_csv_path)) {
+      workflow_csv_path
+    } else {
+      workflow_moo_rds_path
+    }
+    deg_data <- if (!is.null(workflow_csv_path)) {
+      load_flat_file(deg_table_path)
+    } else {
+      load_workflow_moo_rds(deg_table_path)
+    }
+    comp <- trimws(opt$comparison)
+    workflow_columns <- resolve_workflow_deg_columns(deg_data, comp)
+    opt$gene_names_column <- workflow_columns$gene_names_column
+    opt$t_statistic_column <- workflow_columns$t_statistic_column
+    opt$significance_column <- workflow_columns$significance_column
+    opt$fold_change_column <- workflow_columns$fold_change_column
+
+    cat(sprintf(
+      paste0(
+        "Loading workflow DEG table: %s\n",
+        "  Gene=%s; t-stat=%s; p-value=%s; FC=%s\n"
+      ),
+      deg_table_path,
+      opt$gene_names_column,
+      opt$t_statistic_column,
+      opt$significance_column,
+      opt$fold_change_column
+    ))
+    log_time(if (!is.null(workflow_csv_path)) {
+      "Loaded workflow CSV"
+    } else {
+      "Loaded workflow moo-diff.rds"
+    })
+  }
+}
+
+# Priority 3: Check selected data mode against attached data assets.
 if (is.null(deg_data)) {
   deg_input_mode <- ""
   if (!is.null(opt$deg_file) && nchar(trimws(opt$deg_file)) > 0) {
