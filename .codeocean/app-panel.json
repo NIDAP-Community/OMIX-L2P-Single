@@ -106,10 +106,10 @@
 			"category": "basic",
 			"name": "Gene Names Column",
 			"param_name": "gene_names_column",
-			"description": "Name of the column containing gene symbols (e.g. GeneName for MOSuite output, Gene for other formats)",
+			"description": "Optional gene-symbol column. Leave blank to auto-detect GeneName (the demo and OMIX workflow default), then Gene Symbols and other common identifiers. Enter an exact column name to override.",
 			"type": "text",
 			"value_type": "string",
-			"default_value": "GeneName"
+			"default_value": ""
 		},
 		{
 			"id": "LyctksORqcpAT9Jd",

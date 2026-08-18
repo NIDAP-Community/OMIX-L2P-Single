@@ -377,7 +377,7 @@ if (is.null(deg_data)) {
 
     set_default_column_override(
       "gene_names_column",
-      c("GeneName", "Gene", "gene", "symbol", "Symbol", "gene_name", "gene_symbol", "GeneSymbol"),
+      c("GeneName", "Gene Symbols", "Gene", "gene", "symbol", "Symbol", "gene_name", "gene_symbol", "GeneSymbol"),
       "All DEG"
     )
     set_default_column_override(
@@ -536,7 +536,7 @@ if (!is.null(opt$gene_names_column) && opt$gene_names_column != "") {
   cat(sprintf("Using user-specified gene name column: '%s'\n", gene_names_column))
 } else {
   # Auto-detect
-  gene_col_candidates <- c("GeneName", "Gene", "gene", "symbol", "Symbol", "gene_name", "gene_symbol", "GeneSymbol")
+  gene_col_candidates <- c("GeneName", "Gene Symbols", "Gene", "gene", "symbol", "Symbol", "gene_name", "gene_symbol", "GeneSymbol")
   gene_names_column <- NULL
   for (col in gene_col_candidates) {
     if (col %in% colnames(deg_data)) {

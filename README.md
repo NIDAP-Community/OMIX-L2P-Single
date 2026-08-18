@@ -45,7 +45,7 @@ The selected data source should contain differential expression results with:
 **Supported formats**: RDS, CSV, TSV, TXT
 
 **Expected columns** (auto-detected with override options):
-- `GeneName`, `Gene`, `gene`, `symbol` (or custom) → Gene names
+- `GeneName` (preferred), `Gene Symbols`, `Gene`, `gene`, `symbol` (or custom) → Gene names
 - `tstat` or `{comparison}_tstat` → t-statistics for ranking
 - `pval` (preferred default), `adjpval`, or `{comparison}_pval` → p-values for filtering
 - `FC`, `logFC`, or `{comparison}_FC` → fold changes for filtering

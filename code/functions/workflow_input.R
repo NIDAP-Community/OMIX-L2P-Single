@@ -105,7 +105,7 @@ first_comparison_column <- function(comparison, suffixes, available_cols) {
 resolve_workflow_deg_columns <- function(df, comparison) {
   columns <- list(
     gene_names_column = first_existing_column(
-      c("GeneName", "Gene", "gene_name", "gene_symbol", "GeneSymbol"),
+      c("GeneName", "Gene Symbols", "Gene", "gene_name", "gene_symbol", "GeneSymbol"),
       colnames(df)
     ),
     t_statistic_column = first_comparison_column(
