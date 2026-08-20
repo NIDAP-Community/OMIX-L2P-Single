@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-# Install l2p and l2psupp packages from CCBR GitHub
-echo "Installing l2p packages from CCBR GitHub..."
-
-Rscript -e 'install.packages("https://github.com/CCBR/l2p/raw/master/l2p_0.0-14.tar.gz", repos=NULL, type="source")'
-Rscript -e 'install.packages("https://github.com/CCBR/l2p/raw/master/l2psupp_0.0-14.tar.gz", repos=NULL, type="source")'
-
-echo "l2p packages installed successfully"
+# l2p, l2psupp, and optparse are supplied by OMIX Pathways.
+true
