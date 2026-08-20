@@ -116,30 +116,30 @@
 			"category": "columns",
 			"name": "T-Statistic Column",
 			"param_name": "t_statistic_column",
-			"description": "T-statistic column name. MOSuite default 'tstat' works automatically for both All DEG and Filtered DEG modes. For a custom flat table with prefix-style columns (e.g. B-A_tstat), ensure Comparison matches the prefix.",
+			"description": "Optional t-statistic column override. Leave blank to auto-detect MOSuite 'tstat' or a comparison-prefixed column such as 'B-A_tstat'.",
 			"type": "text",
 			"value_type": "string",
-			"default_value": "tstat"
+			"default_value": ""
 		},
 		{
 			"id": "mSDa5ccvYb3zjAJD",
 			"category": "columns",
 			"name": "Significance Column",
 			"param_name": "significance_column",
-			"description": "Nominal p-value column name. MOSuite default 'pval' works automatically for both All DEG and Filtered DEG modes. For a custom flat table with prefix-style columns, ensure Comparison matches the prefix.",
+			"description": "Optional significance-column override. Leave blank to auto-detect the nominal p-value column first (for example, 'pval' or 'B-A_pval'); adjusted p-values are only used when explicitly selected or when no nominal p-value is available.",
 			"type": "text",
 			"value_type": "string",
-			"default_value": "pval"
+			"default_value": ""
 		},
 		{
 			"id": "ajUIqt4zCjIhnFJT",
 			"category": "columns",
 			"name": "Fold Change Column",
 			"param_name": "fold_change_column",
-			"description": "Fold change column name. MOSuite default 'FC' works automatically for both All DEG and Filtered DEG modes. For a custom flat table with prefix-style columns, ensure Comparison matches the prefix.",
+			"description": "Optional fold-change column override. Leave blank to auto-detect MOSuite 'FC' or a comparison-prefixed column such as 'B-A_FC'.",
 			"type": "text",
 			"value_type": "string",
-			"default_value": "FC"
+			"default_value": ""
 		},
 		{
 			"id": "0UIKglsEAjE4aHTS",
