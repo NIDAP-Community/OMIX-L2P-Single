@@ -2,7 +2,7 @@
 
 This repository is a Code Ocean deployment adapter for the canonical
 [OMIX-L2P-Single module](https://github.com/NIDAP-Community/OMIX/tree/main/modules/OMIX-L2P-Single).
-Before editing, read `README.md`, `OMIX_MODULE_SOURCE.md`, and the
+Before editing, read `README.md`, `AGENTS.md`, `OMIX_MODULE_SOURCE.md`, and the
 [OMIX module contract](https://github.com/NIDAP-Community/OMIX/blob/main/docs/module-contract.md).
 
 - Keep Code Ocean-only behavior here: App Panel metadata, `code/main.R`,
