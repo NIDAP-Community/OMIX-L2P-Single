@@ -63,7 +63,10 @@ The selected data source should contain differential expression results with:
 
 ### Required Parameters
 
-**Comparison** - Which comparison to analyze (e.g., 'B-A', 'C-A', 'Treatment-Control'). In All DEG mode this selects `diff_{comparison}.csv`; for wide tables it should match the column prefix in your DEG table.
+Use exactly one of these settings:
+
+- **Comparison** — one comparison to analyze (for example, `B-A`). In All DEG mode this selects `diff_{comparison}.csv`; for wide tables it matches the column prefix.
+- **Comparisons** — an ordered comma-separated list (for example, `B-A,C-A,C-B`) for independent runs from one wide DEG table. Each comparison receives its own output directory and comparison-annotated figures. Leave the three statistic-column overrides blank in this mode. It is not available in All DEG mode.
 
 ## Usage
 
@@ -72,7 +75,7 @@ The selected data source should contain differential expression results with:
 1. **Attach your DEG table** as a data asset
 2. **Fill in Basic Settings**:
    - **DEG Table File**: keep default "All DEG" for MOSuite differential expression output, or choose "Table" for a flat table
-   - **Comparison**: e.g., "B-A" (matches your column prefixes)
+   - **Comparison**: e.g., "B-A" (matches your column prefixes), or use **Comparisons** for an ordered batch from a wide table
    - **Species**: Select from Human, Mouse, Rat, etc.
    - **Pathway Collections**: Keep default "GO,REACTOME,KEGG" or customize
 3. **Run** - The tool auto-detects columns and uses smart defaults
@@ -92,15 +95,14 @@ If your data uses non-standard column names, override auto-detection:
 
 #### Gene Selection Methods
 
-**Rank-based (Recommended)**
+**Threshold-based (default)**
+- Filters by nominal p-value and fold change cutoffs
+- Default thresholds: p ≤ 0.05 and absolute fold change ≥ 1.2
+
+**Rank-based (optional)**
 - Selects top N% or top N genes by t-statistic
 - Better for well-powered bulk RNA-seq experiments
-- Default: Top 10% of ranked genes
-
-**Threshold-based**
-- Filters by p-value and fold change cutoffs
-- Better for heterogeneous data (e.g., single-cell RNA-seq)
-- Default thresholds: p < 0.05, FC > 1.2
+- Enable **Select By Rank** to use it.
 
 #### Pathway Settings
 
@@ -111,7 +113,7 @@ If your data uses non-standard column names, override auto-detection:
 
 #### Visualization Customization
 
-- **Number of Pathways to Plot**: Top N pathways per direction (default: 12)
+- **Number of Pathways to Plot**: Top N pathways per direction (default: 20)
 - **Bubble Plot Variables**: Customize size, color, and sorting
 - **Color Schemes**: Blues, reds, greens, or gradients
 - **Plot Dimensions**: Width and height in inches
@@ -185,6 +187,9 @@ A comprehensive table including:
 - **P-value** (Fisher's exact test)
 - **FDR** (Benjamini-Hochberg corrected)
 - **Gene lists** (genes found in each pathway)
+
+For an ordered batch, these files are written in one directory per comparison
+and `l2p_single_run_manifest.csv` at the result root lists every output.
 
 ### Visualization: `l2p_plots.png`
 

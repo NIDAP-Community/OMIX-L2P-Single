@@ -3,45 +3,45 @@
 	"named_parameters": true,
 	"general": {
 		"title": "L2P Analysis (Single)",
-		"instructions": "All input data uses mount name 'deg_table'. Attach your dataset with mount name 'deg_table' to replace the demo.\n\n- (blank): auto-detects a single flat file or RDS from mount 'deg_table'\n- Table: same as blank - auto-detects a flat file from mount 'deg_table'\n- Filtered DEG: MOSuite moo-properties asset (mount 'deg_table') - after 'filter differential expression'\n- All DEG (default): MOSuite moo-properties asset (mount 'deg_table') - after 'differential expression analysis'\n\nSet 'Comparison' to the comparison ID in your data. Configure Basic Settings and run."
+		"instructions": "All input data uses mount name 'deg_table'. Attach your dataset with mount name 'deg_table' to replace the demo.\n\n- (blank) or Table: auto-detects one flat table or RDS from mount 'deg_table'\n- Filtered DEG: MOSuite moo-properties asset after 'filter differential expression'\n- All DEG: MOSuite moo-properties asset after 'differential expression analysis'\n\nUse either Comparison for one analysis or Comparisons for ordered, independent runs from one wide DEG table. Comparisons requires automatic comparison-prefixed columns and is not available in All DEG mode. Threshold selection (nominal p-value ≤ 0.05 and absolute fold change ≥ 1.2) is the default."
 	},
 	"datasets": [
 		{
 			"id": "28035d52-03e6-4761-8f50-72d48af496d1",
 			"name": "Demo DEG Table",
-			"help_text": "Demo Mouse RNA-seq data (mount: deg_table). Replaced automatically when you attach your own dataset with the same mount name."
+			"description": "Demo Mouse RNA-seq data (mount: deg_table). Replaced automatically when you attach your own dataset with the same mount name."
 		}
 	],
 	"categories": [
 		{
 			"id": "basic",
 			"name": "⭐ Basic Settings",
-			"help_text": "Essential parameters to get started"
+			"description": "Essential parameters to get started"
 		},
 		{
 			"id": "columns",
 			"name": "Column Overrides",
-			"help_text": "Override auto-detected column names if needed"
+			"description": "Override auto-detected column names if needed"
 		},
 		{
 			"id": "gene_selection",
 			"name": "Gene Selection",
-			"help_text": "Fine-tune gene selection criteria"
+			"description": "Fine-tune gene selection criteria"
 		},
 		{
 			"id": "pathways",
 			"name": "Pathway Settings",
-			"help_text": "Customize pathway filtering and selection"
+			"description": "Customize pathway filtering and selection"
 		},
 		{
 			"id": "custom_pathways",
 			"name": "Custom Pathways (Optional)",
-			"help_text": "Use your own pathway database instead of or in addition to built-in collections"
+			"description": "Use your own pathway database instead of or in addition to built-in collections"
 		},
 		{
 			"id": "visualization",
 			"name": "Visualization",
-			"help_text": "Customize plot appearance and output"
+			"description": "Customize plot appearance and output"
 		}
 	],
 	"parameters": [
@@ -50,8 +50,7 @@
 			"category": "basic",
 			"name": "DEG Table File",
 			"param_name": "deg_file",
-			"description": "Select the differential analysis input type. Table - uses a single flat table with differential analysis information. Filtered DEG - uses data from \"Filter Differential Analysis\". All DEG - uses data from \"Differential Expression Analysis\".",
-			"help_text": "Select the input mode for the attached deg_table data asset. Flat table modes support CSV/TSV/TXT/RDS files.",
+			"description": "Select the differential analysis input type. Table - uses a single flat table with differential analysis information. Filtered DEG - uses data from \"Filter Differential Analysis\". All DEG - uses data from \"Differential Expression Analysis\".\n\nSelect the input mode for the attached deg_table data asset. Flat table modes support CSV/TSV/TXT/RDS files.",
 			"type": "list",
 			"value_type": "string",
 			"default_value": "All DEG",
@@ -70,7 +69,17 @@
 			"description": "Comparison ID to analyze (e.g. 'B-A'). Used to find diff_B-A.csv in All DEG mode and to derive column names for wide tables.",
 			"type": "text",
 			"value_type": "string",
-			"default_value": "B-A"
+			"default_value": ""
+		},
+		{
+			"id": "KnbK2W4EH9kLx1qM",
+			"category": "basic",
+			"name": "Comparisons (Optional)",
+			"param_name": "comparisons",
+			"description": "Comma-separated comparison IDs for independent, ordered runs from one wide DEG table (for example, B-A,C-A,C-B). Leave Comparison blank. This mode auto-detects comparison-prefixed columns and writes one result folder per comparison.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": ""
 		},
 		{
 			"id": "JauM4H5xFqmghtu3",
@@ -146,10 +155,10 @@
 			"category": "gene_selection",
 			"name": "Select By Rank",
 			"param_name": "select_by_rank",
-			"description": "Select genes by rank (recommended) or by significance/fold change thresholds",
+			"description": "Use the legacy t-statistic rank method. Leave FALSE (default) to select genes by nominal p-value ≤ 0.05 and absolute fold change ≥ 1.2.",
 			"type": "text",
 			"value_type": "boolean",
-			"default_value": "TRUE"
+			"default_value": "FALSE"
 		},
 		{
 			"id": "wSBYGzRQUaLogakd",
@@ -286,7 +295,7 @@
 			"description": "Maximum number of pathways to display in each plot",
 			"type": "text",
 			"value_type": "number",
-			"default_value": "15",
+			"default_value": "20",
 			"minimum": 1
 		},
 		{

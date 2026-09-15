@@ -56,6 +56,7 @@ option_list <- list(
   # Basic settings
   make_option("--deg_file", type="character", default=NULL, help="Input mode or uploaded DEG file (CSV, TSV, TXT, or RDS)"),
   make_option("--comparison", type="character", default=NULL, help="Comparison to analyze"),
+  make_option("--comparisons", type="character", default=NULL, help="Comma-separated comparisons for independent batched runs"),
   make_option("--species", type="character", default="Mouse", help="Species [default %default]"),
   make_option("--collections_to_include", type="character", default="GO,REACTOME,KEGG", help="Pathway collections [default %default]"),
   
@@ -66,7 +67,7 @@ option_list <- list(
   make_option("--fold_change_column", type="character", default=NULL, help="Optional: Override fold change column"),
   
   # Gene selection
-  make_option("--select_by_rank", type="character", default="TRUE", help="Select by rank [default %default]"),
+  make_option("--select_by_rank", type="character", default="FALSE", help="Select by rank [default %default]"),
   make_option("--select_top_percentage_of_genes", type="character", default="TRUE", help="Select top percentage [default %default]"),
   make_option("--select_top_genes", type="integer", default=500, help="Number of top genes [default %default]"),
   make_option("--significance_threshold", type="double", default=0.05, help="Significance threshold [default %default]"),
@@ -85,7 +86,7 @@ option_list <- list(
   make_option("--custom_pathway_gene_column", type="character", default="gene_symbol", help="Gene symbol column [default %default]"),
   
   # Visualization
-  make_option("--number_of_pathways_to_plot", type="integer", default=12, help="Number of pathways to plot [default %default]"),
+  make_option("--number_of_pathways_to_plot", type="integer", default=20, help="Number of pathways to plot [default %default]"),
   make_option("--pathway_axis_label_max_length", type="integer", default=50, help="Pathway label max length [default %default]"),
   make_option("--pathway_axis_label_font_size", type="integer", default=15, help="Pathway label font size [default %default]"),
   make_option("--x_axis_title_font_size", type="integer", default=20, help="X-axis title font size [default %default]"),
@@ -141,9 +142,43 @@ for (i in seq_along(filtered_args)) {
 opt <- parse_args(opt_parser, args = filtered_args)
 log_time("Parsed command-line arguments")
 
-# Validate required parameters
-if (is.null(opt$comparison) || opt$comparison == "") {
-  stop("ERROR: 'Comparison' parameter is required. Please specify which comparison to analyze (e.g., 'B-A', 'C-A').")
+# Resolve one comparison or an ordered batch. A batch expects a wide DEG table
+# with comparison-prefixed columns; fixed column overrides are necessarily
+# single-comparison settings and are rejected below.
+comparison_raw <- opt[["comparison"]]
+if (is.null(comparison_raw)) {
+  comparison_raw <- ""
+}
+comparisons_raw <- opt[["comparisons"]]
+if (is.null(comparisons_raw)) {
+  comparisons_raw <- ""
+}
+single_comparison <- trimws(as.character(comparison_raw)[1L])
+batch_comparisons <- trimws(strsplit(as.character(comparisons_raw)[1L], ",", fixed = TRUE)[[1L]])
+batch_comparisons <- batch_comparisons[nzchar(batch_comparisons)]
+if (nzchar(single_comparison) && length(batch_comparisons) > 0L) {
+  stop("ERROR: Supply either 'Comparison' or 'Comparisons', not both.")
+}
+if (!nzchar(single_comparison) && length(batch_comparisons) == 0L) {
+  stop("ERROR: Specify a Comparison (for example, 'B-A') or a comma-separated Comparisons list.")
+}
+if (anyDuplicated(batch_comparisons)) {
+  stop("ERROR: 'Comparisons' must not contain duplicate comparison IDs.")
+}
+is_batch <- length(batch_comparisons) > 0L
+comparisons_to_run <- if (is_batch) batch_comparisons else single_comparison
+primary_comparison <- comparisons_to_run[[1L]]
+opt$comparison <- primary_comparison
+
+if (is_batch && any(vapply(
+  c("t_statistic_column", "significance_column", "fold_change_column"),
+  function(name) !is.null(opt[[name]]) && nzchar(trimws(opt[[name]])),
+  logical(1)
+))) {
+  stop(
+    "ERROR: Batched Comparisons uses automatic comparison-prefixed columns. ",
+    "Leave T-Statistic, Significance, and Fold Change column overrides blank."
+  )
 }
 
 # Find and read DEG table: uploaded file > selected data asset mode
@@ -365,6 +400,12 @@ if (is.null(deg_data)) {
     log_time("Loaded diff_filt.csv")
 
   } else if (deg_input_mode == "all deg") {
+    if (is_batch) {
+      stop(
+        "ERROR: Batched Comparisons requires one wide DEG table with comparison-prefixed columns. ",
+        "Use a workflow DEG result or Table mode rather than All DEG mode."
+      )
+    }
     if (is.null(opt$comparison) || !nzchar(trimws(opt$comparison))) {
       stop("ERROR: 'All DEG' mode requires the 'Comparison' parameter.")
     }
@@ -516,12 +557,25 @@ pathways_down <- if (!is.null(opt$pathways_to_use_down) && opt$pathways_to_use_d
   c()
 }
 
-# Set output file paths to /results/
-export_plot <- file.path("/results", "l2p_plots.png")
-export_results <- file.path("/results", "l2p_results.csv")
+# Set output root. A single comparison retains the historical root-level
+# filenames; batched comparisons receive isolated subdirectories.
+results_root <- "/results"
+dir.create(results_root, showWarnings = FALSE, recursive = TRUE)
+comparison_slug <- function(comparison) {
+  slug <- gsub("[^A-Za-z0-9._-]+", "_", comparison)
+  slug <- gsub("^_+|_+$", "", slug)
+  if (!nzchar(slug)) {
+    stop("ERROR: A comparison ID must contain at least one letter, number, dot, dash, or underscore.")
+  }
+  slug
+}
+comparison_slugs <- vapply(comparisons_to_run, comparison_slug, character(1))
+if (anyDuplicated(comparison_slugs)) {
+  stop("ERROR: Comparisons resolve to duplicate result-directory names.")
+}
 
 # Run L2P analysis
-cat(sprintf("Starting L2P Analysis for comparison: %s\n", opt$comparison))
+cat(sprintf("Starting L2P Analysis for comparison(s): %s\n", paste(comparisons_to_run, collapse = ", ")))
 cat(sprintf("Species: %s\n", opt$species))
 cat(sprintf("Collections: %s\n\n", paste(collections, collapse=", ")))
 
@@ -695,54 +749,86 @@ if (!is.null(opt$custom_pathways) && opt$custom_pathways != "") {
 
 cat("\n=== Starting L2P pathway analysis ===\n")
 
-results <- l2p_single(
-  deg_table = deg_data,
-  gene_names_column = gene_names_column,
-  t_statistic_column = ranking_column,
-  significance_column = significance_column,
-  fold_change_column = fold_change_column,
-  comparison = opt$comparison,
-  species = opt$species,
-  collections_to_include = collections,
-  custom_pathways = custom_pathways_data,
-  custom_pathway_name_column = opt$custom_pathway_name_column,
-  custom_pathway_gene_column = opt$custom_pathway_gene_column,
-  select_by_rank = opt$select_by_rank,
-  select_top_percentage_of_genes = opt$select_top_percentage_of_genes,
-  select_top_genes = opt$select_top_genes,
-  significance_threshold = opt$significance_threshold,
-  fold_change_threshold = opt$fold_change_threshold,
-  minimum_number_of_deg_genes = opt$minimum_number_of_deg_genes,
-  number_of_pathways_to_plot = opt$number_of_pathways_to_plot,
-  pathway_axis_label_max_length = opt$pathway_axis_label_max_length,
-  plot_top_pathways_up = opt$plot_top_pathways_up,
-  pathways_to_use_up = pathways_up,
-  plot_top_pathways_down = opt$plot_top_pathways_down,
-  pathways_to_use_down = pathways_down,
-  sort_bubble_plot_by = opt$sort_bubble_plot_by,
-  plot_bubble_size = opt$plot_bubble_size,
-  plot_bubble_color = opt$plot_bubble_color,
-  bubble_colors = opt$bubble_colors,
-  pathway_axis_label_font_size = opt$pathway_axis_label_font_size,
-  x_axis_title_font_size = opt$x_axis_title_font_size,
-  y_axis_title_font_size = opt$y_axis_title_font_size,
-  x_axis_tick_font_size = opt$x_axis_tick_font_size,
-  use_fdr_p_values = opt$use_fdr_p_values,
-  color_for_bar = opt$color_for_bar,
-  use_built_in_gene_universe = opt$use_built_in_gene_universe,
-  minimum_pathway_hit_count = opt$minimum_pathway_hit_count,
-  p_value_threshold_for_output = opt$p_value_threshold_for_output,
-  export_plot_file = export_plot,
-  export_plot_width = opt$export_plot_width,
-  export_plot_height = opt$export_plot_height,
-  export_results_file = export_results
+run_records <- vector("list", length(comparisons_to_run))
+for (i in seq_along(comparisons_to_run)) {
+  comparison <- comparisons_to_run[[i]]
+  comparison_dir <- if (is_batch) {
+    file.path(results_root, comparison_slugs[[i]])
+  } else {
+    results_root
+  }
+  dir.create(comparison_dir, showWarnings = FALSE, recursive = TRUE)
+  export_plot <- file.path(comparison_dir, "l2p_plots.png")
+  export_results <- file.path(comparison_dir, "l2p_results.csv")
+
+  cat(sprintf("Running L2P for comparison: %s\n", comparison))
+  results <- l2p_single(
+    deg_table = deg_data,
+    gene_names_column = gene_names_column,
+    t_statistic_column = if (is_batch) NULL else ranking_column,
+    significance_column = if (is_batch) NULL else significance_column,
+    fold_change_column = if (is_batch) NULL else fold_change_column,
+    comparison = comparison,
+    plot_title_prefix = if (is_batch) comparison else NULL,
+    species = opt$species,
+    collections_to_include = collections,
+    custom_pathways = custom_pathways_data,
+    custom_pathway_name_column = opt$custom_pathway_name_column,
+    custom_pathway_gene_column = opt$custom_pathway_gene_column,
+    select_by_rank = opt$select_by_rank,
+    select_top_percentage_of_genes = opt$select_top_percentage_of_genes,
+    select_top_genes = opt$select_top_genes,
+    significance_threshold = opt$significance_threshold,
+    fold_change_threshold = opt$fold_change_threshold,
+    minimum_number_of_deg_genes = opt$minimum_number_of_deg_genes,
+    number_of_pathways_to_plot = opt$number_of_pathways_to_plot,
+    pathway_axis_label_max_length = opt$pathway_axis_label_max_length,
+    plot_top_pathways_up = opt$plot_top_pathways_up,
+    pathways_to_use_up = pathways_up,
+    plot_top_pathways_down = opt$plot_top_pathways_down,
+    pathways_to_use_down = pathways_down,
+    sort_bubble_plot_by = opt$sort_bubble_plot_by,
+    plot_bubble_size = opt$plot_bubble_size,
+    plot_bubble_color = opt$plot_bubble_color,
+    bubble_colors = opt$bubble_colors,
+    pathway_axis_label_font_size = opt$pathway_axis_label_font_size,
+    x_axis_title_font_size = opt$x_axis_title_font_size,
+    y_axis_title_font_size = opt$y_axis_title_font_size,
+    x_axis_tick_font_size = opt$x_axis_tick_font_size,
+    use_fdr_p_values = opt$use_fdr_p_values,
+    color_for_bar = opt$color_for_bar,
+    use_built_in_gene_universe = opt$use_built_in_gene_universe,
+    minimum_pathway_hit_count = opt$minimum_pathway_hit_count,
+    p_value_threshold_for_output = opt$p_value_threshold_for_output,
+    export_plot_file = export_plot,
+    export_plot_width = opt$export_plot_width,
+    export_plot_height = opt$export_plot_height,
+    export_results_file = export_results
+  )
+
+  run_records[[i]] <- data.frame(
+    comparison = comparison,
+    output_directory = comparison_dir,
+    results_file = export_results,
+    provenance_file = sub("\\.csv$", "_provenance.csv", export_results),
+    plot_prefix = export_plot,
+    result_row_count = if (is.data.frame(results)) nrow(results) else NA_integer_,
+    stringsAsFactors = FALSE
+  )
+}
+
+run_manifest <- do.call(rbind, run_records)
+utils::write.csv(
+  run_manifest,
+  file.path(results_root, "l2p_single_run_manifest.csv"),
+  row.names = FALSE
 )
 
 log_time("L2P analysis function completed")
 
 cat("\n=== L2P Analysis completed successfully! ===\n")
-cat(sprintf("Results saved to: %s\n", export_results))
-cat(sprintf("Plots saved to: %s\n", export_plot))
+cat(sprintf("Run manifest saved to: %s\n", file.path(results_root, "l2p_single_run_manifest.csv")))
+cat(sprintf("Results saved under: %s\n", results_root))
 
 # Print timing summary
 cat("\n=== Timing Summary (Sorted by Duration) ===\n")
