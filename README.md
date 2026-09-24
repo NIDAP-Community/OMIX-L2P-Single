@@ -19,6 +19,13 @@ deployment adapter.
 - Uploaded and attached single-comparison DEG-table discovery under `/data`.
 - Capsule outputs under `/results` and the pinned runtime configuration.
 
+The attached demonstration dataset is from mouse, so the deployment preset for
+**Species** is `Mouse` rather than the portable module's `Human` default. All
+scientific selection, pathway, and visualization defaults otherwise follow the
+canonical CLI. The App Panel places the essential controls under **Main
+Settings** and keeps every supported tuning control visible in an **Advanced**
+category.
+
 ## Overview
 
 **Version**: v4.0 | **Part of the OMIX analysis suite**
@@ -73,7 +80,7 @@ Use exactly one of these settings:
 ### Quick Start (Beginners)
 
 1. **Attach your DEG table** as a data asset
-2. **Fill in Basic Settings**:
+2. **Fill in Main Settings**:
    - **DEG Table File**: keep default "All DEG" for MOSuite differential expression output, or choose "Table" for a flat table
    - **Comparison**: e.g., "B-A" (matches your column prefixes), or use **Comparisons** for an ordered batch from a wide table
    - **Species**: Select from Human, Mouse, Rat, etc.
@@ -155,7 +162,7 @@ My_Custom_Pathway_2,KRAS
 
 1. Prepare your custom pathway file in the format above (TSV or CSV)
 2. Open the **App Panel** (⚙️ icon) in this capsule
-3. Go to **"Custom Pathways (Optional)"** section
+3. Go to **"Advanced: Custom Pathways"** section
 4. **Custom Pathway File**: Click to upload your file from your local computer
 5. **Pathway Name Column**: Adjust if your column name differs (default: `gene_set_name`)
 6. **Gene Symbol Column**: Adjust if your column name differs (default: `gene_symbol`)

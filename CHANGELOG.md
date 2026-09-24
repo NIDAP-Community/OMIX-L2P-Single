@@ -8,6 +8,9 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
 ## [Unreleased]
 
 ### Added
+- Static App Panel contract checks covering complete CLI exposure, Main versus
+  Advanced organization, documented deployment presets, and scientific
+  defaults.
 - A local adapter workflow-input test suite covering preferred `DEG` CSV
   discovery, ambiguity errors, inferred B-A columns, and the uniquely named
   `moo-diff.rds` fallback.
@@ -29,6 +32,11 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
 - Keyword footer to `/code/README.md` for visual branding (2026-07-08)
 
 ### Changed
+- Reorganized the App Panel into Main and clearly labeled Advanced categories
+  without hiding any supported adapter CLI control.
+- Realigned pathway collections, minimum DEG count, label sizing, font sizing,
+  and plot dimensions with the canonical L2P Single CLI. The mouse species
+  preset remains intentional for the attached mouse demonstration dataset.
 - Workflow input discovery now selects exactly one CSV whose filename matches
   the case-insensitive regex `DEG`, avoiding non-DEG workflow artifacts such
   as package inventories.

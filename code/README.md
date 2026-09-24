@@ -39,7 +39,7 @@ Abl1        -3.45       0.002       0.6
 - Non-human genes are automatically converted to human orthologs for pathway analysis
 
 ### 4. Pathway Collections
-**Select which pathway databases to search** (default: H)
+**Select which pathway databases to search** (default: GO,REACTOME,KEGG)
 
 Copy and paste one or more comma-separated identifiers (see full list below):
 
@@ -224,7 +224,7 @@ If automatic column detection doesn't work for your data:
 
 ### Gene Selection
 Control which genes are included:
-- **Select by rank** (default: TRUE): Use top-ranked genes vs. significance thresholds
+- **Select by rank** (default: FALSE): Use top-ranked genes instead of the default significance and fold-change thresholds
 - **Select top percentage** (default: TRUE): Select top % of genes vs. fixed number
 - **Select top genes** (default: 500): Number of top genes when not using percentage
 - **Significance threshold** (default: 0.05): P-value cutoff when selecting by significance
@@ -240,7 +240,7 @@ Refine pathway results:
 
 ### Visualization
 Customize plot appearance:
-- **Number of pathways to plot** (default: 12): Top N pathways in each plot
+- **Number of pathways to plot** (default: 20): Top N pathways in each plot
 - **Pathway label max length** (default: 50): Truncate long pathway names
 - **Font sizes**: Customize pathway labels, axis titles, and tick labels
 - **Custom pathway selection**: Manually specify pathways to visualize

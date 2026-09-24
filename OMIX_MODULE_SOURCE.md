@@ -36,6 +36,16 @@ See the [OMIX versioning and release policy](https://github.com/NIDAP-Community/
 `code/functions/workflow_input.R` resolves platform workflow inputs. It is
 adapter support code, not an exported scientific function.
 
+## Intentional adapter presets
+
+- The App Panel defaults `species` to `Mouse` because the attached
+  demonstration DEG dataset is mouse. The portable canonical module retains
+  its platform-neutral `Human` default.
+- `deg_file` selects Code Ocean attachment modes and output paths are fixed
+  under `/results`; neither is part of the canonical scientific interface.
+- All other scientific and visualization defaults exposed by the panel match
+  the adapter CLI and the recorded canonical module.
+
 ## Ownership and synchronization
 
 The canonical module owns scientific functions, portable CLI behavior, schemas,
