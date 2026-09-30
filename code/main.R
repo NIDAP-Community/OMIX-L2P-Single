@@ -396,26 +396,13 @@ if (!is.null(opt$significance_column) && opt$significance_column != "") {
   }
   cat(sprintf("Using user-specified significance column: '%s'\n", significance_column))
 } else {
-  # Try to auto-detect based on comparison
-  sig_candidates <- c(
-    "pval",
-    "adjpval",
-    "padj",
-    "FDR",
-    paste0(opt$comparison, "_pval"),
-    paste0(opt$comparison, "_adjpval"),
-    paste0(opt$comparison, "_padj"),
-    paste0(opt$comparison, "_pvalue"),
-    paste0(opt$comparison, "_p.value"),
-    paste0(opt$comparison, "_FDR")
+  # Prefer the requested comparison in a wide workflow table. Generic column
+  # names remain a deterministic fallback for narrow, single-contrast tables.
+  significance_column <- first_comparison_column(
+    opt$comparison,
+    c("_pval", "_adjpval", "_padj", "_pvalue", "_p.value", "_FDR"),
+    colnames(deg_data)
   )
-  significance_column <- NULL
-  for (col in sig_candidates) {
-    if (col %in% colnames(deg_data)) {
-      significance_column <- col
-      break
-    }
-  }
   
   if (!is.null(significance_column)) {
     cat(sprintf("Auto-detected significance column: '%s'\n", significance_column))
@@ -433,24 +420,13 @@ if (!is.null(opt$fold_change_column) && opt$fold_change_column != "") {
   }
   cat(sprintf("Using user-specified fold change column: '%s'\n", fold_change_column))
 } else {
-  # Try to auto-detect based on comparison
-  fc_candidates <- c(
-    "FC",
-    "logFC",
-    "fc",
-    "FoldChange",
-    paste0(opt$comparison, "_FC"),
-    paste0(opt$comparison, "_fc"),
-    paste0(opt$comparison, "_FoldChange"),
-    paste0(opt$comparison, "_logFC")
+  # Prefer the requested comparison in a wide workflow table. Generic column
+  # names remain a deterministic fallback for narrow, single-contrast tables.
+  fold_change_column <- first_comparison_column(
+    opt$comparison,
+    c("_FC", "_fc", "_FoldChange", "_logFC"),
+    colnames(deg_data)
   )
-  fold_change_column <- NULL
-  for (col in fc_candidates) {
-    if (col %in% colnames(deg_data)) {
-      fold_change_column <- col
-      break
-    }
-  }
   
   if (!is.null(fold_change_column)) {
     cat(sprintf("Auto-detected fold change column: '%s'\n", fold_change_column))
@@ -468,24 +444,13 @@ if (!is.null(opt$t_statistic_column) && opt$t_statistic_column != "") {
   }
   cat(sprintf("Using user-specified ranking column: '%s'\n", ranking_column))
 } else {
-  # Try to auto-detect based on comparison
-  rank_candidates <- c(
-    "tstat",
-    "t.stat",
-    "t_stat",
-    "stat",
-    paste0(opt$comparison, "_tstat"),
-    paste0(opt$comparison, "_t.stat"),
-    paste0(opt$comparison, "_t_stat"),
-    paste0(opt$comparison, "_stat")
+  # Prefer the requested comparison in a wide workflow table. Generic column
+  # names remain a deterministic fallback for narrow, single-contrast tables.
+  ranking_column <- first_comparison_column(
+    opt$comparison,
+    c("_tstat", "_t.stat", "_t_stat", "_stat"),
+    colnames(deg_data)
   )
-  ranking_column <- NULL
-  for (col in rank_candidates) {
-    if (col %in% colnames(deg_data)) {
-      ranking_column <- col
-      break
-    }
-  }
   
   if (!is.null(ranking_column)) {
     cat(sprintf("Auto-detected ranking column: '%s'\n", ranking_column))
@@ -501,25 +466,25 @@ custom_pathways_data <- NULL
 if (!is.null(opt$custom_pathways) && opt$custom_pathways != "") {
   cat("\n=== Loading custom pathway database ===\n")
   if (file.exists(opt$custom_pathways)) {
-    # Detect file type and read
-    file_ext <- tolower(tools::file_ext(opt$custom_pathways))
-    if (file_ext == "csv") {
-      custom_pathways_data <- read.csv(opt$custom_pathways, stringsAsFactors = FALSE, check.names = FALSE)
+    custom_pathways_data <- load_custom_pathways_file(opt$custom_pathways)
+    if (is.data.frame(custom_pathways_data)) {
+      cat(sprintf("Loaded custom pathways: %d rows\n", nrow(custom_pathways_data)))
+      cat(sprintf("Available columns: %s\n", paste(colnames(custom_pathways_data), collapse=", ")))
+
+      # Long-format tables require the two configured mapping columns. Native
+      # L2P pathway lists have already been structurally validated by the
+      # adapter loader and are passed through unchanged.
+      if (!(opt$custom_pathway_name_column %in% colnames(custom_pathways_data))) {
+        stop(sprintf("ERROR: Custom pathway name column '%s' not found in custom pathway file", opt$custom_pathway_name_column))
+      }
+      if (!(opt$custom_pathway_gene_column %in% colnames(custom_pathways_data))) {
+        stop(sprintf("ERROR: Custom pathway gene column '%s' not found in custom pathway file", opt$custom_pathway_gene_column))
+      }
+      cat(sprintf("Using pathway name column: '%s'\n", opt$custom_pathway_name_column))
+      cat(sprintf("Using gene symbol column: '%s'\n", opt$custom_pathway_gene_column))
     } else {
-      custom_pathways_data <- read.delim(opt$custom_pathways, stringsAsFactors = FALSE, check.names = FALSE)
+      cat(sprintf("Loaded custom pathways: %d L2P pathway-list entries\n", length(custom_pathways_data)))
     }
-    cat(sprintf("Loaded custom pathways: %d rows\n", nrow(custom_pathways_data)))
-    cat(sprintf("Available columns: %s\n", paste(colnames(custom_pathways_data), collapse=", ")))
-    
-    # Verify required columns exist
-    if (!(opt$custom_pathway_name_column %in% colnames(custom_pathways_data))) {
-      stop(sprintf("ERROR: Custom pathway name column '%s' not found in custom pathway file", opt$custom_pathway_name_column))
-    }
-    if (!(opt$custom_pathway_gene_column %in% colnames(custom_pathways_data))) {
-      stop(sprintf("ERROR: Custom pathway gene column '%s' not found in custom pathway file", opt$custom_pathway_gene_column))
-    }
-    cat(sprintf("Using pathway name column: '%s'\n", opt$custom_pathway_name_column))
-    cat(sprintf("Using gene symbol column: '%s'\n", opt$custom_pathway_gene_column))
   } else {
     stop(sprintf("ERROR: Custom pathway file not found: %s", opt$custom_pathways))
   }

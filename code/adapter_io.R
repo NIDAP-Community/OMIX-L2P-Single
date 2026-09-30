@@ -5,6 +5,51 @@
 # owns Code Ocean mount discovery and legacy MOSuite workflow translation.
 
 .l2p_supported_deg_extensions <- c("csv", "tsv", "txt", "rds")
+.l2p_supported_pathway_extensions <- c("csv", "tsv", "txt", "rds")
+
+load_custom_pathways_file <- function(path) {
+  if (!file.exists(path) || dir.exists(path)) {
+    stop("ERROR: Custom pathway file does not exist or is not a file: ", path)
+  }
+
+  extension <- tolower(tools::file_ext(path))
+  if (!extension %in% .l2p_supported_pathway_extensions) {
+    stop("ERROR: Custom pathway file must be CSV, TSV, TXT, or RDS: ", path)
+  }
+
+  object <- switch(
+    extension,
+    csv = read.csv(path, stringsAsFactors = FALSE, check.names = FALSE),
+    tsv = read.delim(path, stringsAsFactors = FALSE, check.names = FALSE),
+    txt = read.delim(path, stringsAsFactors = FALSE, check.names = FALSE),
+    rds = readRDS(path)
+  )
+
+  if (is.data.frame(object)) {
+    return(object)
+  }
+
+  # A native L2P custom-pathway list contains one atomic vector per pathway:
+  # identifier, display name, then at least one gene. Reject arbitrary R lists
+  # here so an incompatible serialized object cannot fail later inside l2p().
+  compatible_entry <- function(entry) {
+    is.atomic(entry) && !is.object(entry) && length(entry) >= 3L &&
+      !anyNA(entry) && all(nzchar(trimws(as.character(entry))))
+  }
+  if (
+    identical(extension, "rds") &&
+      is.list(object) &&
+      length(object) > 0L &&
+      all(vapply(object, compatible_entry, logical(1)))
+  ) {
+    return(object)
+  }
+
+  stop(
+    "ERROR: Custom pathway RDS must contain a data frame or a non-empty ",
+    "L2P pathway list whose entries contain an identifier, name, and gene(s)."
+  )
+}
 
 .l2p_supported_deg_files <- function(data_root) {
   if (!dir.exists(data_root)) {

@@ -13,7 +13,8 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
   and the documented mouse demo preset.
 - A local adapter workflow-input test suite covering explicit-file priority,
   mount-scoped discovery, exact comparison matching, ambiguity errors, and
-  inferred B-A columns.
+  inferred B-A columns, including mixed generic/prefixed tables and custom
+  pathway RDS objects.
 - Metadata tag improvements for better discoverability (2026-01-08)
   - Added "MSigDB" tag (tool supports MSigDB H and C collections)
   - Added "gene-sets" tag
@@ -57,6 +58,10 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
   - Maintains consistency with concise naming pattern
 
 ### Fixed
+- Automatic column selection now prefers the requested comparison prefix in
+  mixed wide tables, while retaining generic names for narrow tables.
+- Custom pathway `.rds` files are read with `readRDS()` and validated as either
+  long-format tables or native L2P pathway lists.
 - Non-interactive runs no longer create an implicit `Rplots.pdf` in the code
   directory; plots are written only to the explicit results path.
 - App Panel now uses named parameters mode (2026-01-08)
