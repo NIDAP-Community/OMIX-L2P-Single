@@ -5,9 +5,9 @@ if [[ $# -lt 2 ]]; then
   cat >&2 <<'USAGE'
 Usage: scripts/run-local-codeocean-workflow-debug.sh <image> <comparison> [additional main.R arguments]
 
-Mounts data/debug/codeocean-workflow as /data, matching the shape of a
-downstream Code Ocean workflow connection. The image must contain the runtime
-dependencies required by this capsule.
+Mounts data/debug/codeocean-workflow as /data/deg_table, matching the declared
+Code Ocean input mount. The image must contain the runtime dependencies
+required by this capsule.
 USAGE
   exit 2
 fi
@@ -30,7 +30,7 @@ mkdir -p "$results_root"
 
 docker run --rm \
   -v "$repo_root/code:/code:ro" \
-  -v "$fixture_root:/data:ro" \
+  -v "$fixture_root:/data/deg_table:ro" \
   -v "$results_root:/results" \
   --entrypoint bash \
   "$image" \

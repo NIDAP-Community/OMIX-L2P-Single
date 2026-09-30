@@ -14,6 +14,9 @@ Before running the analysis, configure these essential parameters in the **⭐ B
 **Input your differential expression data:**
 - **Upload your own file**: Click to upload CSV, TSV, or RDS format
 - **Use demo data**: Leave blank to use the attached demo data asset (Mouse RNA-seq example)
+- **Avoid ambiguous input**: Blank selection searches only the `deg_table`
+  mount. If more than one candidate remains after exact comparison matching,
+  the run stops and asks you to select the intended file explicitly.
 
 **Required columns in your file:**
 - Gene identifier column (e.g., `Gene`, `symbol`)
@@ -255,7 +258,7 @@ If running via command line or scripts (most users should use the App Panel abov
 
 ```bash
 Rscript main.R \
-  --deg_file /data/deg_table/var_DEGAnalysis.rds \
+  --deg_table /data/deg_table/var_DEGAnalysis.rds \
   --comparison "B-A" \
   --species Mouse \
   --collections_to_include "H,C2" \

@@ -48,11 +48,13 @@ L2P (List to pathways) performs over-representation analysis to identify biologi
 
 ### Data Asset: DEG Table
 
-Attach a data asset with mount name `deg_table`. The capsule supports the same Code Ocean input modes as OMIX L2P Multi:
-
-- **All DEG** (default): reads MOSuite moo-properties output from differential expression analysis by finding `diff_{comparison}.csv` under `/data`
-- **Filtered DEG**: reads MOSuite filtered differential expression output by finding `diff_filt.csv` under `/data`
-- **Table** or blank: auto-detects one flat table or RDS file under `/data/deg_table`
+Attach a data asset with mount name `deg_table`. You can either select one CSV,
+TSV, TXT, or RDS file explicitly with **DEG Table File**, or leave that selector
+blank. Blank selection searches only `/data/deg_table` and requires one
+unambiguous DEG candidate. For a single **Comparison**, an exact
+`diff_<comparison>.csv` is selected deterministically even when sibling
+comparison files are present. Any other multiple-candidate case stops and
+lists the paths instead of silently choosing the first file.
 
 The selected data source should contain differential expression results with:
 
@@ -72,8 +74,8 @@ The selected data source should contain differential expression results with:
 
 Use exactly one of these settings:
 
-- **Comparison** — one comparison to analyze (for example, `B-A`). In All DEG mode this selects `diff_{comparison}.csv`; for wide tables it matches the column prefix.
-- **Comparisons** — an ordered comma-separated list (for example, `B-A,C-A,C-B`) for independent runs from one wide DEG table. Each comparison receives its own output directory and comparison-annotated figures. Leave the three statistic-column overrides blank in this mode. It is not available in All DEG mode.
+- **Comparison** — one comparison to analyze (for example, `B-A`). This selects an exact `diff_<comparison>.csv` when present; for wide tables it matches the column prefix.
+- **Comparisons** — an ordered comma-separated list (for example, `B-A,C-A,C-B`) for independent runs from one wide DEG table. Each comparison receives its own output directory and comparison-annotated figures. Leave the three statistic-column overrides blank in this mode.
 
 ## Usage
 
@@ -81,7 +83,7 @@ Use exactly one of these settings:
 
 1. **Attach your DEG table** as a data asset
 2. **Fill in Main Settings**:
-   - **DEG Table File**: keep default "All DEG" for MOSuite differential expression output, or choose "Table" for a flat table
+   - **DEG Table File**: leave blank to use the attached `deg_table` asset, or select one file explicitly
    - **Comparison**: e.g., "B-A" (matches your column prefixes), or use **Comparisons** for an ordered batch from a wide table
    - **Species**: Select from Human, Mouse, Rat, etc.
    - **Pathway Collections**: Keep default "GO,REACTOME,KEGG" or customize
