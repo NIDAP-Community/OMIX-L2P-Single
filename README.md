@@ -145,12 +145,15 @@ You can use your own custom pathway database instead of or in addition to the bu
 
 ### File Format Requirements
 
-Your custom pathway file must be in **TSV or CSV format** with two required columns:
+Supported custom-pathway formats are **CSV, TSV, TXT, and RDS**.
+
+For CSV, TSV, TXT, or a long-format data frame saved as RDS, provide two
+required columns:
 
 - **Pathway name column**: Contains pathway/gene set names (default: `gene_set_name`)
 - **Gene symbol column**: Contains gene symbols (default: `gene_symbol`)
 
-**Example format**:
+**Example long-table format**:
 ```
 gene_set_name,gene_symbol
 My_Custom_Pathway_1,TP53
@@ -160,9 +163,14 @@ My_Custom_Pathway_2,EGFR
 My_Custom_Pathway_2,KRAS
 ```
 
+An RDS file may instead contain a native L2P pathway list. Each list entry must
+be an atomic vector containing a pathway identifier, a display name, and one or
+more gene symbols. The pathway-name and gene-symbol column settings apply only
+to long-format tables, not to native L2P lists.
+
 ### How to Use Your Custom Database
 
-1. Prepare your custom pathway file in the format above (TSV or CSV)
+1. Prepare a CSV, TSV, TXT, or RDS custom pathway file in one of the supported formats above
 2. Open the **App Panel** (⚙️ icon) in this capsule
 3. Go to **"Advanced: Custom Pathways"** section
 4. **Custom Pathway File**: Click to upload your file from your local computer

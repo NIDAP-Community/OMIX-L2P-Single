@@ -190,9 +190,14 @@ All genes are mapped to human orthologs internally for pathway matching, ensurin
 
 You can provide your own pathway definitions via the "Custom Pathway File" parameter:
 
-**Format**: TSV or CSV file with two columns:
+**Formats**: CSV, TSV, TXT, or RDS. Delimited files and long-format data frames
+saved as RDS use two columns:
 - Pathway name column (default: `gene_set_name`)
 - Gene symbol column (default: `gene_symbol`)
+
+An RDS file may instead contain a native L2P pathway list. Each entry must be
+an atomic vector containing a pathway identifier, a display name, and one or
+more gene symbols. Column-name parameters apply only to long-format tables.
 
 Custom pathways can be used **with** or **without** standard collections.
 
