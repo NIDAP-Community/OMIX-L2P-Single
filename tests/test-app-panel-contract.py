@@ -11,28 +11,37 @@ import re
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-CANONICAL_COMMIT = "eee4433cd74d0ce9bd1daba1571ca6312cba7ea2"
-SCIENTIFIC_SHA256 = "c963f5c4168f7bb425d14b4ea0a00270bcff0818ee5b1e7d341b4209bff385bf"
-SCHEMA_SHA256 = "ffbbb20d3cfa384a4b1c09610110520e1d8b62ed55d0046c251156edcdb98628"
+CANONICAL_COMMIT = "5caab82a6dc89c20a30f4cf3826618620b1daf0f"
+SCIENTIFIC_SHA256 = "f24c57751dcbda394cdf222bdf46892b6f463f98fb678d07234e921fa0c02054"
+SCHEMA_SHA256 = "ff40848d376cdf9b5bb406a478a689b7398387752e8f0e2efbfb1595f4f2a1e0"
 
 
-def control(name, r_type, panel_type="text", value_type="string", default=None, choices=None):
+def control(
+    name,
+    r_type,
+    panel_type="text",
+    value_type="string",
+    default=None,
+    choices=None,
+    panel_default=None,
+):
     return {
         "name": name,
         "r_type": r_type,
         "panel_type": panel_type,
         "value_type": value_type,
         "default": default,
+        "panel_default": default if panel_default is None else panel_default,
         "choices": choices or [],
     }
 
 
-# Canonical public/advanced order from interface version 1. Mouse is the sole
-# reviewed deployment preset: the attached demonstration DEG table is mouse.
+# Canonical public/advanced order from interface version 1. Mouse and B-A are
+# reviewed deployment presets for the attached demonstration DEG table.
 CONTRACT = [
     control("deg_table", "character", "file"),
     control("custom_pathways", "character", "file"),
-    control("comparison", "character"),
+    control("comparison", "character", panel_default="B-A"),
     control("comparisons", "character"),
     control("species", "character", "list", default="Mouse", choices=["Human", "Mouse", "Macaque", "Rat", "Zebrafish", "Rabbit", "Drosophila"]),
     control("collections_to_include", "character", default="GO,REACTOME,KEGG"),
@@ -40,6 +49,9 @@ CONTRACT = [
     control("t_statistic_column", "character"),
     control("significance_column", "character"),
     control("fold_change_column", "character"),
+    control("t_statistic_suffix", "character", default="_tstat"),
+    control("significance_suffix", "character", default="_pval"),
+    control("fold_change_suffix", "character", default="_FC"),
     control("select_by_rank", "character", value_type="boolean", default="FALSE"),
     control("select_top_percentage_of_genes", "character", value_type="boolean", default="TRUE"),
     control("select_top_genes", "integer", value_type="number", default=500),
@@ -142,7 +154,7 @@ def audit(panel, main_text, source_text):
             findings.append(f"{expected['name']}: App Panel type mismatch")
         if observed.get("value_type") != expected["value_type"]:
             findings.append(f"{expected['name']}: App Panel value_type mismatch")
-        if comparable(observed.get("default_value")) != comparable(expected["default"]):
+        if comparable(observed.get("default_value")) != comparable(expected["panel_default"]):
             findings.append(f"{expected['name']}: App Panel default mismatch")
         if observed.get("extra_data", []) != expected["choices"]:
             findings.append(f"{expected['name']}: App Panel choices mismatch")
@@ -167,6 +179,12 @@ def audit(panel, main_text, source_text):
         findings.append("adapter does not source the canonical scientific export")
     if 'source("adapter_io.R")' not in main_text:
         findings.append("adapter does not source adapter-owned input translation")
+    if "resolve_l2p_comparisons(" not in main_text:
+        findings.append("adapter does not use canonical blank-comparison resolution")
+    if 'opt[["comparison"]]' not in main_text or 'opt[["comparisons"]]' not in main_text:
+        findings.append("adapter comparison controls are vulnerable to partial matching")
+    if "Batched Comparisons uses automatic comparison-prefixed columns" not in main_text:
+        findings.append("batched exact-column overrides are not rejected")
     if CANONICAL_COMMIT not in source_text:
         findings.append("canonical source record is not pinned to the reviewed contract commit")
     if SCIENTIFIC_SHA256 not in source_text:
@@ -179,6 +197,10 @@ def audit(panel, main_text, source_text):
         findings.append("Code Ocean validation is not recorded honestly as pending")
     if "mouse demonstration" not in source_text.lower():
         findings.append("Mouse demo default exception is not documented")
+    if "`comparison` to `B-A`" not in source_text:
+        findings.append("B-A mouse-demo comparison preset is not documented")
+    if "codeocean/omix-r-pathway:r4.4.3-bioconductor3.20-v2" not in source_text:
+        findings.append("OMIX Pathways v2 runtime tag is not recorded")
 
     scientific_path = ROOT / "code" / "functions" / "L2P_Analysis.R"
     digest = hashlib.sha256(scientific_path.read_bytes()).hexdigest()

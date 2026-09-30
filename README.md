@@ -19,12 +19,12 @@ deployment adapter.
 - Uploaded and attached single-comparison DEG-table discovery under `/data`.
 - Capsule outputs under `/results` and the pinned runtime configuration.
 
-The attached demonstration dataset is from mouse, so the deployment preset for
-**Species** is `Mouse` rather than the portable module's `Human` default. All
-scientific selection, pathway, and visualization defaults otherwise follow the
-canonical CLI. The App Panel places the essential controls under **Main
-Settings** and keeps every supported tuning control visible in an **Advanced**
-category.
+The attached demonstration dataset is from mouse and its example contrast is
+`B-A`, so the deployment presets **Species** to `Mouse` and **Comparison** to
+`B-A`. Replace or clear the comparison preset for another table. All scientific
+selection, pathway, and visualization defaults otherwise follow the canonical
+CLI. The App Panel places the essential controls under **Main Settings** and
+keeps every supported tuning control visible in an **Advanced** category.
 
 ## Overview
 
@@ -70,12 +70,17 @@ The selected data source should contain differential expression results with:
 - `pval` (preferred default), `adjpval`, or `{comparison}_pval` → p-values for filtering
 - `FC`, `logFC`, or `{comparison}_FC` → fold changes for filtering
 
-### Required Parameters
+### Comparison selection
 
-Use exactly one of these settings:
+Use at most one of these settings:
 
 - **Comparison** — one comparison to analyze (for example, `B-A`). This selects an exact `diff_<comparison>.csv` when present; for wide tables it matches the column prefix.
 - **Comparisons** — an ordered comma-separated list (for example, `B-A,C-A,C-B`) for independent runs from one wide DEG table. Each comparison receives its own output directory and comparison-annotated figures. Leave the three statistic-column overrides blank in this mode.
+
+When both are blank, the loaded table is inspected using the configured column
+suffixes. The run proceeds only when exactly one complete comparison prefix is
+found; no prefix or several prefixes produce an actionable error. The mouse
+demo keeps `Comparison=B-A` so its default run is deterministic.
 
 ## Usage
 
@@ -84,7 +89,7 @@ Use exactly one of these settings:
 1. **Attach your DEG table** as a data asset
 2. **Fill in Main Settings**:
    - **DEG Table File**: leave blank to use the attached `deg_table` asset, or select one file explicitly
-   - **Comparison**: e.g., "B-A" (matches your column prefixes), or use **Comparisons** for an ordered batch from a wide table
+   - **Comparison**: keep the demo preset `B-A`, replace it with your prefix, or clear it only when your table has one unambiguous prefix; use **Comparisons** for an ordered batch from a wide table
    - **Species**: Select from Human, Mouse, Rat, etc.
    - **Pathway Collections**: Keep default "GO,REACTOME,KEGG" or customize
 3. **Run** - The tool auto-detects columns and uses smart defaults
@@ -99,6 +104,14 @@ If your data uses non-standard column names, override auto-detection:
 - **Ranking Column (T-Statistic Column)**: e.g., "logFC", "stat" (more explicit name than generic "ranking column")
 - **Significance Column**: e.g., "padj", "FDR"
 - **Fold Change Column**: e.g., "log2FC", "foldChange"
+
+For a consistent alternative naming convention across one or more contrasts,
+set **T-Statistic Suffix**, **Significance Suffix**, and **Fold Change Suffix**.
+The defaults are `_tstat`, `_pval`, and `_FC`. For example, a table containing
+`B-A_statistic`, `B-A_adjpval`, and `B-A_logFC` uses `_statistic`, `_adjpval`,
+and `_logFC`. An exact single-comparison column override takes precedence over
+its suffix. Fixed exact-column overrides are rejected for a multi-comparison
+batch.
 
 *Note: Parameter names `gene_names_column` and `t_statistic_column` have been harmonized with L2P Multi for consistency across the OMIX suite.*
 
@@ -240,6 +253,17 @@ Multi-panel figure with:
 - Check the **Available columns** message in the output log
 - Manually specify columns in **Column Overrides** section
 - Ensure your comparison prefix exactly matches (case-sensitive)
+- Set the three suffix controls when the table uses consistent non-default
+  endings such as `_adjpval` or `_logFC`
+
+## Environment and reproducibility
+
+This adapter uses the pinned Code Ocean runtime `OMIX Pathways v2`. The exact
+canonical module commit, exported scientific-file hash, runtime tag, and
+pending platform-validation fields are recorded in
+[OMIX_MODULE_SOURCE.md](OMIX_MODULE_SOURCE.md). Record the selected input asset
+and effective parameter values with any scientific result. Local and GitHub
+checks do not replace a representative Code Ocean run.
 
 ## References
 

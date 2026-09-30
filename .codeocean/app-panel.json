@@ -3,7 +3,7 @@
 	"named_parameters": true,
 	"general": {
 		"title": "L2P Analysis (Single)",
-		"instructions": "Attach one DEG input with mount name 'deg_table' to replace the mouse demo. Leave DEG Table File blank to discover the input only within that mount, or select a CSV, TSV, TXT, or RDS file explicitly. Discovery accepts one unambiguous DEG table; for a single Comparison, an exact diff_<comparison>.csv file is selected deterministically. Ambiguous candidates stop with their paths instead of choosing one silently.\n\nUse either Comparison for one analysis or Comparisons for ordered, independent runs from one wide DEG table. Comparisons requires automatic comparison-prefixed columns. Threshold selection (nominal p-value ≤ 0.05 and absolute fold change ≥ 1.2) is the default. Essential controls are under Main Settings; expand the Advanced categories to tune column detection, selection, pathway filtering, custom pathways, or plot appearance."
+		"instructions": "Attach one DEG input with mount name 'deg_table' to replace the mouse demo. Leave DEG Table File blank to discover the input only within that mount, or select a CSV, TSV, TXT, or RDS file explicitly. Discovery accepts one unambiguous DEG table; for a single Comparison, an exact diff_<comparison>.csv file is selected deterministically. Ambiguous files stop with their paths instead of choosing one silently.\n\nThe mouse demo preset runs B-A. For another table, use either Comparison for one analysis or Comparisons for ordered, independent runs. You may leave both blank only when the table contains exactly one complete comparison prefix using the configured suffixes; several detected prefixes stop for an explicit choice. Threshold selection (nominal p-value ≤ 0.05 and absolute fold change ≥ 1.2) is the default. Essential controls are under Main Settings; expand the Advanced categories to tune column detection, selection, pathway filtering, custom pathways, or plot appearance."
 	},
 	"datasets": [
 		{
@@ -68,10 +68,10 @@
 			"category": "basic",
 			"name": "Comparison",
 			"param_name": "comparison",
-			"description": "One comparison ID to analyze (for example, B-A). It deterministically selects diff_B-A.csv when that file exists and otherwise derives matching columns from a wide DEG table. Supply this or Comparisons, not both.",
+			"description": "One comparison ID to analyze. The mouse demo preset is B-A. For your own table, replace it or leave both comparison controls blank only when exactly one complete prefix is detectable. Supply this or Comparisons, not both.",
 			"type": "text",
 			"value_type": "string",
-			"default_value": ""
+			"default_value": "B-A"
 		},
 		{
 			"id": "KnbK2W4EH9kLx1qM",
@@ -151,6 +151,36 @@
 			"type": "text",
 			"value_type": "string",
 			"default_value": ""
+		},
+		{
+			"id": "suffix_tstat_v320",
+			"category": "columns",
+			"name": "T-Statistic Suffix",
+			"param_name": "t_statistic_suffix",
+			"description": "Suffix appended to each comparison ID to resolve its ranking column. Exact single-comparison column overrides take precedence.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "_tstat"
+		},
+		{
+			"id": "suffix_significance_v320",
+			"category": "columns",
+			"name": "Significance Suffix",
+			"param_name": "significance_suffix",
+			"description": "Suffix appended to each comparison ID to resolve its p-value or adjusted-p-value column. Exact single-comparison column overrides take precedence.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "_pval"
+		},
+		{
+			"id": "suffix_fold_change_v320",
+			"category": "columns",
+			"name": "Fold Change Suffix",
+			"param_name": "fold_change_suffix",
+			"description": "Suffix appended to each comparison ID to resolve its fold-change column. Exact single-comparison column overrides take precedence.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "_FC"
 		},
 		{
 			"id": "0UIKglsEAjE4aHTS",

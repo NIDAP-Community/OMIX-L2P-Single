@@ -8,6 +8,12 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
 ## [Unreleased]
 
 ### Added
+- Canonical OMIX L2P Single v3.2.0 comparison-suffix controls for ranking,
+  significance, and fold-change columns, exposed in both the adapter CLI and
+  App Panel.
+- Adapter regression coverage for unambiguous blank-comparison inference,
+  ambiguous-prefix failure, alternative suffixes, and exact-column override
+  precedence.
 - Static adapter-contract and mutation checks covering canonical names, types,
   choices, order, defaults, source/schema hashes, managed-file boundaries,
   and the documented mouse demo preset.
@@ -33,6 +39,13 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
 - Keyword footer to `/code/README.md` for visual branding (2026-07-08)
 
 ### Changed
+- Updated the managed scientific export byte-for-byte from canonical OMIX
+  commit `5caab82a6dc89c20a30f4cf3826618620b1daf0f` and recorded its SHA-256.
+- The mouse demonstration preset now explicitly uses `comparison=B-A` with
+  `comparisons` blank. A blank adapter CLI comparison is accepted only when
+  the loaded table contains exactly one complete canonical comparison prefix.
+- Narrow per-comparison workflow files retain generic-column translation while
+  wide tables use only the requested prefix and configured suffixes.
 - Reorganized the App Panel into Main and clearly labeled Advanced categories
   without hiding any supported adapter CLI control.
 - Replaced the deprecated deployment-only `deg_file` mode selector with the

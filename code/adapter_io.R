@@ -182,55 +182,94 @@ load_workflow_moo_rds <- function(path) {
   )
 }
 
-first_comparison_column <- function(comparison, suffixes, available_cols) {
-  direct_candidates <- paste0(comparison, suffixes)
-  direct <- direct_candidates[direct_candidates %in% available_cols]
-  if (length(direct) > 0L) {
-    return(direct[[1L]])
-  }
-
-  prefixed <- available_cols[
-    startsWith(available_cols, paste0(comparison, "_")) &
-      vapply(
-        available_cols,
-        function(column) any(endsWith(column, suffixes)),
-        logical(1)
-      )
-  ]
-  if (length(prefixed) > 0L) {
-    return(prefixed[[1L]])
-  }
-
-  fallback <- sub("^_", "", suffixes)
-  fallback <- fallback[fallback %in% available_cols]
-  if (length(fallback) > 0L) fallback[[1L]] else NULL
-}
-
-resolve_workflow_deg_columns <- function(df, comparison) {
+resolve_workflow_deg_columns <- function(
+  df,
+  comparison,
+  gene_names_column = NULL,
+  t_statistic_column = NULL,
+  significance_column = NULL,
+  fold_change_column = NULL,
+  t_statistic_suffix = "_tstat",
+  significance_suffix = "_pval",
+  fold_change_suffix = "_FC",
+  select_by_rank = FALSE
+) {
   gene_candidates <- c(
     "GeneName", "Gene Symbols", "Gene", "gene_name", "gene_symbol", "GeneSymbol"
   )
   gene_matches <- gene_candidates[gene_candidates %in% colnames(df)]
+  if (!is.null(gene_names_column) && nzchar(trimws(gene_names_column))) {
+    gene_matches <- trimws(gene_names_column)
+  }
+
+  # Reuse the canonical column-precedence rule. This guarantees that an exact
+  # single-comparison override wins, while the configured suffixes determine
+  # every automatically derived comparison-prefixed name.
+  canonical_columns <- resolve_l2p_comparison_columns(
+    comparison = comparison,
+    t_statistic_column = t_statistic_column,
+    significance_column = significance_column,
+    fold_change_column = fold_change_column,
+    t_statistic_suffix = t_statistic_suffix,
+    significance_suffix = significance_suffix,
+    fold_change_suffix = fold_change_suffix
+  )
+
+  # A Code Ocean workflow may hand off one narrow diff_<comparison>.csv whose
+  # columns are generic (tstat, pval, FC). Permit that platform translation only
+  # when the table has no complete prefixed comparison for the configured
+  # method. A wide table must use an explicit comparison prefix and is never
+  # silently redirected to generic or another contrast's columns.
+  detected_comparisons <- detect_l2p_comparisons(
+    column_names = colnames(df),
+    select_by_rank = select_by_rank,
+    t_statistic_suffix = t_statistic_suffix,
+    significance_suffix = significance_suffix,
+    fold_change_suffix = fold_change_suffix
+  )
+  allow_generic <- length(detected_comparisons) == 0L
+  nonempty <- function(value) {
+    !is.null(value) && length(value) == 1L && !is.na(value) &&
+      nzchar(trimws(as.character(value)))
+  }
+  resolve_adapter_column <- function(canonical_name, override, suffix) {
+    if (canonical_name %in% colnames(df) || nonempty(override) || !allow_generic) {
+      return(canonical_name)
+    }
+    generic_name <- sub("^_", "", trimws(as.character(suffix)))
+    if (generic_name %in% colnames(df)) generic_name else canonical_name
+  }
+
   columns <- list(
     gene_names_column = if (length(gene_matches) > 0L) gene_matches[[1L]] else NULL,
-    t_statistic_column = first_comparison_column(
-      comparison,
-      c("_tstat", "_t.stat", "_t_stat", "_stat"),
-      colnames(df)
+    t_statistic_column = resolve_adapter_column(
+      canonical_columns$t_statistic_column,
+      t_statistic_column,
+      t_statistic_suffix
     ),
-    significance_column = first_comparison_column(
-      comparison,
-      c("_pval", "_adjpval", "_padj", "_pvalue", "_p.value", "_FDR"),
-      colnames(df)
+    significance_column = resolve_adapter_column(
+      canonical_columns$significance_column,
+      significance_column,
+      significance_suffix
     ),
-    fold_change_column = first_comparison_column(
-      comparison,
-      c("_FC", "_fc", "_FoldChange", "_logFC"),
-      colnames(df)
+    fold_change_column = resolve_adapter_column(
+      canonical_columns$fold_change_column,
+      fold_change_column,
+      fold_change_suffix
     )
   )
 
-  missing <- names(columns)[vapply(columns, is.null, logical(1))]
+  required_names <- c(
+    "gene_names_column",
+    if (isTRUE(select_by_rank)) "t_statistic_column" else c(
+      "significance_column", "fold_change_column"
+    )
+  )
+  missing <- required_names[vapply(
+    columns[required_names],
+    function(value) is.null(value) || !value %in% colnames(df),
+    logical(1)
+  )]
   if (length(missing) > 0L) {
     stop(
       "ERROR: Workflow input lacks required column(s) for comparison '",
