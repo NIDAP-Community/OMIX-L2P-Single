@@ -8,9 +8,13 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
 ## [Unreleased]
 
 ### Added
-- A local adapter workflow-input test suite covering preferred `DEG` CSV
-  discovery, ambiguity errors, inferred B-A columns, and the uniquely named
-  `moo-diff.rds` fallback.
+- Static adapter-contract and mutation checks covering canonical names, types,
+  choices, order, defaults, source/schema hashes, managed-file boundaries,
+  and the documented mouse demo preset.
+- A local adapter workflow-input test suite covering explicit-file priority,
+  mount-scoped discovery, exact comparison matching, ambiguity errors, and
+  inferred B-A columns, including mixed generic/prefixed tables and custom
+  pathway RDS objects.
 - Metadata tag improvements for better discoverability (2026-01-08)
   - Added "MSigDB" tag (tool supports MSigDB H and C collections)
   - Added "gene-sets" tag
@@ -29,9 +33,19 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
 - Keyword footer to `/code/README.md` for visual branding (2026-07-08)
 
 ### Changed
-- Workflow input discovery now selects exactly one CSV whose filename matches
-  the case-insensitive regex `DEG`, avoiding non-DEG workflow artifacts such
-  as package inventories.
+- Reorganized the App Panel into Main and clearly labeled Advanced categories
+  without hiding any supported adapter CLI control.
+- Replaced the deprecated deployment-only `deg_file` mode selector with the
+  canonical `deg_table` file binding.
+- Realigned pathway collections, minimum DEG count, label sizing, font sizing,
+  plot dimensions, species/plot choices, and parameter order with the
+  canonical L2P Single contract. The mouse species preset remains intentional
+  for the attached mouse demonstration dataset.
+- Workflow input discovery is confined to `/data/deg_table`, selects an exact
+  `diff_<comparison>.csv` for single-comparison workflows, and otherwise
+  rejects multiple candidates rather than selecting the first path.
+- Moved Code Ocean and MOSuite input translation from `code/functions/` to
+  `code/adapter_io.R`, leaving `code/functions/` as the canonical R export.
 - Aligned the runtime species default with the Code Ocean App Panel (`Mouse`).
 - Data loading logic now supports three input methods:
   1. Direct file upload via App Panel (highest priority)
@@ -44,6 +58,10 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
   - Maintains consistency with concise naming pattern
 
 ### Fixed
+- Automatic column selection now prefers the requested comparison prefix in
+  mixed wide tables, while retaining generic names for narrow tables.
+- Custom pathway `.rds` files are read with `readRDS()` and validated as either
+  long-format tables or native L2P pathway lists.
 - Non-interactive runs no longer create an implicit `Rplots.pdf` in the code
   directory; plots are written only to the explicit results path.
 - App Panel now uses named parameters mode (2026-01-08)

@@ -19,6 +19,13 @@ deployment adapter.
 - Uploaded and attached single-comparison DEG-table discovery under `/data`.
 - Capsule outputs under `/results` and the pinned runtime configuration.
 
+The attached demonstration dataset is from mouse, so the deployment preset for
+**Species** is `Mouse` rather than the portable module's `Human` default. All
+scientific selection, pathway, and visualization defaults otherwise follow the
+canonical CLI. The App Panel places the essential controls under **Main
+Settings** and keeps every supported tuning control visible in an **Advanced**
+category.
+
 ## Overview
 
 **Version**: v4.0 | **Part of the OMIX analysis suite**
@@ -41,11 +48,13 @@ L2P (List to pathways) performs over-representation analysis to identify biologi
 
 ### Data Asset: DEG Table
 
-Attach a data asset with mount name `deg_table`. The capsule supports the same Code Ocean input modes as OMIX L2P Multi:
-
-- **All DEG** (default): reads MOSuite moo-properties output from differential expression analysis by finding `diff_{comparison}.csv` under `/data`
-- **Filtered DEG**: reads MOSuite filtered differential expression output by finding `diff_filt.csv` under `/data`
-- **Table** or blank: auto-detects one flat table or RDS file under `/data/deg_table`
+Attach a data asset with mount name `deg_table`. You can either select one CSV,
+TSV, TXT, or RDS file explicitly with **DEG Table File**, or leave that selector
+blank. Blank selection searches only `/data/deg_table` and requires one
+unambiguous DEG candidate. For a single **Comparison**, an exact
+`diff_<comparison>.csv` is selected deterministically even when sibling
+comparison files are present. Any other multiple-candidate case stops and
+lists the paths instead of silently choosing the first file.
 
 The selected data source should contain differential expression results with:
 
@@ -65,16 +74,16 @@ The selected data source should contain differential expression results with:
 
 Use exactly one of these settings:
 
-- **Comparison** — one comparison to analyze (for example, `B-A`). In All DEG mode this selects `diff_{comparison}.csv`; for wide tables it matches the column prefix.
-- **Comparisons** — an ordered comma-separated list (for example, `B-A,C-A,C-B`) for independent runs from one wide DEG table. Each comparison receives its own output directory and comparison-annotated figures. Leave the three statistic-column overrides blank in this mode. It is not available in All DEG mode.
+- **Comparison** — one comparison to analyze (for example, `B-A`). This selects an exact `diff_<comparison>.csv` when present; for wide tables it matches the column prefix.
+- **Comparisons** — an ordered comma-separated list (for example, `B-A,C-A,C-B`) for independent runs from one wide DEG table. Each comparison receives its own output directory and comparison-annotated figures. Leave the three statistic-column overrides blank in this mode.
 
 ## Usage
 
 ### Quick Start (Beginners)
 
 1. **Attach your DEG table** as a data asset
-2. **Fill in Basic Settings**:
-   - **DEG Table File**: keep default "All DEG" for MOSuite differential expression output, or choose "Table" for a flat table
+2. **Fill in Main Settings**:
+   - **DEG Table File**: leave blank to use the attached `deg_table` asset, or select one file explicitly
    - **Comparison**: e.g., "B-A" (matches your column prefixes), or use **Comparisons** for an ordered batch from a wide table
    - **Species**: Select from Human, Mouse, Rat, etc.
    - **Pathway Collections**: Keep default "GO,REACTOME,KEGG" or customize
@@ -136,12 +145,15 @@ You can use your own custom pathway database instead of or in addition to the bu
 
 ### File Format Requirements
 
-Your custom pathway file must be in **TSV or CSV format** with two required columns:
+Supported custom-pathway formats are **CSV, TSV, TXT, and RDS**.
+
+For CSV, TSV, TXT, or a long-format data frame saved as RDS, provide two
+required columns:
 
 - **Pathway name column**: Contains pathway/gene set names (default: `gene_set_name`)
 - **Gene symbol column**: Contains gene symbols (default: `gene_symbol`)
 
-**Example format**:
+**Example long-table format**:
 ```
 gene_set_name,gene_symbol
 My_Custom_Pathway_1,TP53
@@ -151,11 +163,16 @@ My_Custom_Pathway_2,EGFR
 My_Custom_Pathway_2,KRAS
 ```
 
+An RDS file may instead contain a native L2P pathway list. Each list entry must
+be an atomic vector containing a pathway identifier, a display name, and one or
+more gene symbols. The pathway-name and gene-symbol column settings apply only
+to long-format tables, not to native L2P lists.
+
 ### How to Use Your Custom Database
 
-1. Prepare your custom pathway file in the format above (TSV or CSV)
+1. Prepare a CSV, TSV, TXT, or RDS custom pathway file in one of the supported formats above
 2. Open the **App Panel** (⚙️ icon) in this capsule
-3. Go to **"Custom Pathways (Optional)"** section
+3. Go to **"Advanced: Custom Pathways"** section
 4. **Custom Pathway File**: Click to upload your file from your local computer
 5. **Pathway Name Column**: Adjust if your column name differs (default: `gene_set_name`)
 6. **Gene Symbol Column**: Adjust if your column name differs (default: `gene_symbol`)

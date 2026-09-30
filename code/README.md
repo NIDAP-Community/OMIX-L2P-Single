@@ -14,6 +14,9 @@ Before running the analysis, configure these essential parameters in the **⭐ B
 **Input your differential expression data:**
 - **Upload your own file**: Click to upload CSV, TSV, or RDS format
 - **Use demo data**: Leave blank to use the attached demo data asset (Mouse RNA-seq example)
+- **Avoid ambiguous input**: Blank selection searches only the `deg_table`
+  mount. If more than one candidate remains after exact comparison matching,
+  the run stops and asks you to select the intended file explicitly.
 
 **Required columns in your file:**
 - Gene identifier column (e.g., `Gene`, `symbol`)
@@ -39,7 +42,7 @@ Abl1        -3.45       0.002       0.6
 - Non-human genes are automatically converted to human orthologs for pathway analysis
 
 ### 4. Pathway Collections
-**Select which pathway databases to search** (default: H)
+**Select which pathway databases to search** (default: GO,REACTOME,KEGG)
 
 Copy and paste one or more comma-separated identifiers (see full list below):
 
@@ -187,9 +190,14 @@ All genes are mapped to human orthologs internally for pathway matching, ensurin
 
 You can provide your own pathway definitions via the "Custom Pathway File" parameter:
 
-**Format**: TSV or CSV file with two columns:
+**Formats**: CSV, TSV, TXT, or RDS. Delimited files and long-format data frames
+saved as RDS use two columns:
 - Pathway name column (default: `gene_set_name`)
 - Gene symbol column (default: `gene_symbol`)
+
+An RDS file may instead contain a native L2P pathway list. Each entry must be
+an atomic vector containing a pathway identifier, a display name, and one or
+more gene symbols. Column-name parameters apply only to long-format tables.
 
 Custom pathways can be used **with** or **without** standard collections.
 
@@ -224,7 +232,7 @@ If automatic column detection doesn't work for your data:
 
 ### Gene Selection
 Control which genes are included:
-- **Select by rank** (default: TRUE): Use top-ranked genes vs. significance thresholds
+- **Select by rank** (default: FALSE): Use top-ranked genes instead of the default significance and fold-change thresholds
 - **Select top percentage** (default: TRUE): Select top % of genes vs. fixed number
 - **Select top genes** (default: 500): Number of top genes when not using percentage
 - **Significance threshold** (default: 0.05): P-value cutoff when selecting by significance
@@ -240,7 +248,7 @@ Refine pathway results:
 
 ### Visualization
 Customize plot appearance:
-- **Number of pathways to plot** (default: 12): Top N pathways in each plot
+- **Number of pathways to plot** (default: 20): Top N pathways in each plot
 - **Pathway label max length** (default: 50): Truncate long pathway names
 - **Font sizes**: Customize pathway labels, axis titles, and tick labels
 - **Custom pathway selection**: Manually specify pathways to visualize
@@ -255,7 +263,7 @@ If running via command line or scripts (most users should use the App Panel abov
 
 ```bash
 Rscript main.R \
-  --deg_file /data/deg_table/var_DEGAnalysis.rds \
+  --deg_table /data/deg_table/var_DEGAnalysis.rds \
   --comparison "B-A" \
   --species Mouse \
   --collections_to_include "H,C2" \

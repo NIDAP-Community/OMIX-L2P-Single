@@ -19,9 +19,10 @@ data/debug/codeocean-workflow/
     `-- r-packages.csv
 ```
 
-When this directory is mounted at `/data`, the adapter sees, for example,
-`/data/<workflow-result-id>/DEG_Analysis.csv`. This is intentionally different
-from an attached data asset mounted at `/data/deg_table/`.
+When this directory is mounted at `/data/deg_table`, the adapter sees, for
+example, `/data/deg_table/<workflow-result-id>/DEG_Analysis.csv`. The explicit
+mount matches both the App Panel declaration and normal Code Ocean attachment
+behavior.
 
 ## Run the Code Ocean adapter locally
 
@@ -38,15 +39,16 @@ The runner mounts:
 | Local path | Container path | Purpose |
 | --- | --- | --- |
 | `code/` | `/code` | Code Ocean adapter code |
-| `data/debug/codeocean-workflow/` | `/data` | Downstream workflow results |
+| `data/debug/codeocean-workflow/` | `/data/deg_table` | Downstream workflow results |
 | `results/debug-codeocean-workflow/` | `/results` | Local test outputs |
 
-No `--deg_file` argument is supplied, so `code/main.R` follows its workflow
-input path: recursively discover exactly one CSV whose filename matches the
-case-insensitive regex `DEG` under `/data`, or—if no such CSV exists—exactly
-one `moo-diff.rds` file. Other CSV files, such as a package inventory, are not
-treated as DEG input. The log should report the selected workflow file and
-inferred DEG columns before pathway analysis begins.
+No `--deg_table` argument is supplied, so `code/main.R` follows its
+mount-scoped discovery path. For one comparison, an exact
+`diff_<comparison>.csv` is deterministic. Otherwise the adapter requires one
+recognized DEG result or one supported data file beneath `/data/deg_table`;
+multiple candidates fail and list their paths. Other CSV files, such as a
+package inventory, are not treated as named DEG input. The log should report
+the selected workflow file before pathway analysis begins.
 
 Use a comparison that exists in `DEG_Analysis.csv`. To test error handling,
 temporarily copy or rename files inside this ignored debug fixture; do not
@@ -54,9 +56,9 @@ alter the original archive.
 
 ## Run workflow-input checks
 
-The adapter test verifies that a unique `DEG` CSV is preferred, non-DEG CSV
-artifacts are ignored, multiple DEG candidates fail clearly, and a uniquely
-named `moo-diff.rds` remains available as a fallback:
+The adapter test verifies explicit-file priority, mount-scoped discovery,
+exact comparison-file selection, non-DEG artifact exclusion, and clear
+ambiguity errors:
 
 ```bash
 Rscript tests/test-workflow-input.R

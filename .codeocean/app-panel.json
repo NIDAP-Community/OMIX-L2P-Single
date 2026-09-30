@@ -3,7 +3,7 @@
 	"named_parameters": true,
 	"general": {
 		"title": "L2P Analysis (Single)",
-		"instructions": "All input data uses mount name 'deg_table'. Attach your dataset with mount name 'deg_table' to replace the demo.\n\n- (blank) or Table: auto-detects one flat table or RDS from mount 'deg_table'\n- Filtered DEG: MOSuite moo-properties asset after 'filter differential expression'\n- All DEG: MOSuite moo-properties asset after 'differential expression analysis'\n\nUse either Comparison for one analysis or Comparisons for ordered, independent runs from one wide DEG table. Comparisons requires automatic comparison-prefixed columns and is not available in All DEG mode. Threshold selection (nominal p-value ≤ 0.05 and absolute fold change ≥ 1.2) is the default."
+		"instructions": "Attach one DEG input with mount name 'deg_table' to replace the mouse demo. Leave DEG Table File blank to discover the input only within that mount, or select a CSV, TSV, TXT, or RDS file explicitly. Discovery accepts one unambiguous DEG table; for a single Comparison, an exact diff_<comparison>.csv file is selected deterministically. Ambiguous candidates stop with their paths instead of choosing one silently.\n\nUse either Comparison for one analysis or Comparisons for ordered, independent runs from one wide DEG table. Comparisons requires automatic comparison-prefixed columns. Threshold selection (nominal p-value ≤ 0.05 and absolute fold change ≥ 1.2) is the default. Essential controls are under Main Settings; expand the Advanced categories to tune column detection, selection, pathway filtering, custom pathways, or plot appearance."
 	},
 	"datasets": [
 		{
@@ -15,58 +15,60 @@
 	"categories": [
 		{
 			"id": "basic",
-			"name": "⭐ Basic Settings",
-			"description": "Essential parameters to get started"
+			"name": "Main Settings",
+			"description": "DEG input and the essential parameters for a standard run"
 		},
 		{
 			"id": "columns",
-			"name": "Column Overrides",
-			"description": "Override auto-detected column names if needed"
+			"name": "Advanced: Column Overrides",
+			"description": "Override auto-detected columns only when the input uses nonstandard names"
 		},
 		{
 			"id": "gene_selection",
-			"name": "Gene Selection",
-			"description": "Fine-tune gene selection criteria"
+			"name": "Advanced: Gene Selection",
+			"description": "Tune rank- or threshold-based gene selection"
 		},
 		{
 			"id": "pathways",
-			"name": "Pathway Settings",
-			"description": "Customize pathway filtering and selection"
+			"name": "Advanced: Pathway Filtering",
+			"description": "Tune pathway hit and significance filtering"
 		},
 		{
 			"id": "custom_pathways",
-			"name": "Custom Pathways (Optional)",
+			"name": "Advanced: Custom Pathways",
 			"description": "Use your own pathway database instead of or in addition to built-in collections"
 		},
 		{
 			"id": "visualization",
-			"name": "Visualization",
+			"name": "Advanced: Visualization",
 			"description": "Customize plot appearance and output"
 		}
 	],
 	"parameters": [
 		{
-			"id": "deg_file_upload",
+			"id": "deg_table_upload",
 			"category": "basic",
 			"name": "DEG Table File",
-			"param_name": "deg_file",
-			"description": "Select the differential analysis input type. Table - uses a single flat table with differential analysis information. Filtered DEG - uses data from \"Filter Differential Analysis\". All DEG - uses data from \"Differential Expression Analysis\".\n\nSelect the input mode for the attached deg_table data asset. Flat table modes support CSV/TSV/TXT/RDS files.",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "All DEG",
-			"extra_data": [
-				"",
-				"Table",
-				"Filtered DEG",
-				"All DEG"
-			]
+			"param_name": "deg_table",
+			"description": "Optional explicit CSV, TSV, TXT, or RDS differential-expression table. Leave blank to discover the input only within the attached data asset mounted as deg_table; ambiguous candidates are rejected.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
+			"id": "Gg1CrW8MFZoEqXHa",
+			"category": "custom_pathways",
+			"name": "Custom Pathway File",
+			"param_name": "custom_pathways",
+			"description": "Optional custom pathway table (CSV, TSV, or TXT) or compatible RDS object. Leave blank to use only built-in collections.",
+			"type": "file",
+			"value_type": "string"
 		},
 		{
 			"id": "CbsRhmV9N1w60PJW",
 			"category": "basic",
 			"name": "Comparison",
 			"param_name": "comparison",
-			"description": "Comparison ID to analyze (e.g. 'B-A'). Used to find diff_B-A.csv in All DEG mode and to derive column names for wide tables.",
+			"description": "One comparison ID to analyze (for example, B-A). It deterministically selects diff_B-A.csv when that file exists and otherwise derives matching columns from a wide DEG table. Supply this or Comparisons, not both.",
 			"type": "text",
 			"value_type": "string",
 			"default_value": ""
@@ -93,8 +95,8 @@
 			"extra_data": [
 				"Human",
 				"Mouse",
-				"Rat",
 				"Macaque",
+				"Rat",
 				"Zebrafish",
 				"Rabbit",
 				"Drosophila"
@@ -108,11 +110,11 @@
 			"description": "Type one or more database codes. To run multiple databases together, join codes with commas and no spaces (e.g. H,REACTOME,KEGG). Common codes: H = Hallmark gene sets; GO = Gene Ontology; REACTOME = Reactome pathways; KEGG = KEGG pathways; WikiPathways = WikiPathways gene sets; PANTH = PANTHER pathways; PID = Pathway Interaction Database; BIOCYC = BioCyc pathways; C1 = MSigDB positional gene sets; C2 = MSigDB curated gene sets; C3 = MSigDB motif/regulatory target gene sets; C4 = MSigDB computational gene sets; C5 = MSigDB Gene Ontology gene sets; C6 = MSigDB oncogenic signatures; C7 = MSigDB immunologic signatures; C8 = MSigDB cell type signatures.",
 			"type": "text",
 			"value_type": "string",
-			"default_value": "H"
+			"default_value": "GO,REACTOME,KEGG"
 		},
 		{
 			"id": "3zNKp1ovg82mnRhs",
-			"category": "basic",
+			"category": "columns",
 			"name": "Gene Names Column",
 			"param_name": "gene_names_column",
 			"description": "Optional gene-symbol column. Leave blank to auto-detect GeneName (the demo and OMIX workflow default), then Gene Symbols and other common identifiers. Enter an exact column name to override.",
@@ -202,7 +204,7 @@
 			"type": "text",
 			"value_type": "number",
 			"default_value": "1.2",
-			"minimum": 1
+			"minimum": 0
 		},
 		{
 			"id": "Vq9GHr90rmCqzpYM",
@@ -212,8 +214,8 @@
 			"description": "Minimum number of DEG genes required per comparison",
 			"type": "text",
 			"value_type": "number",
-			"default_value": "100",
-			"minimum": 1
+			"default_value": "50",
+			"minimum": 0
 		},
 		{
 			"id": "glyLMygEYhXDRLrw",
@@ -224,7 +226,7 @@
 			"type": "text",
 			"value_type": "number",
 			"default_value": "5",
-			"minimum": 1
+			"minimum": 0
 		},
 		{
 			"id": "uNqUJ0pmLKcCIwaX",
@@ -257,15 +259,6 @@
 			"type": "text",
 			"value_type": "boolean",
 			"default_value": "FALSE"
-		},
-		{
-			"id": "Gg1CrW8MFZoEqXHa",
-			"category": "custom_pathways",
-			"name": "Custom Pathway File",
-			"param_name": "custom_pathways",
-			"description": "Select custom pathway file from attached data assets (TSV/CSV format). Leave blank to use only standard collections.",
-			"type": "file",
-			"value_type": "string"
 		},
 		{
 			"id": "p6djAQjsanZHacM0",
@@ -306,8 +299,8 @@
 			"description": "Maximum character length for pathway names",
 			"type": "text",
 			"value_type": "number",
-			"default_value": "45",
-			"minimum": 10
+			"default_value": "50",
+			"minimum": 1
 		},
 		{
 			"id": "eLYOlMn6yJ18qaoT",
@@ -317,7 +310,7 @@
 			"description": "Font size for pathway labels",
 			"type": "text",
 			"value_type": "number",
-			"default_value": "14",
+			"default_value": "15",
 			"minimum": 1
 		},
 		{
@@ -328,7 +321,7 @@
 			"description": "Font size for x-axis title",
 			"type": "text",
 			"value_type": "number",
-			"default_value": "14",
+			"default_value": "20",
 			"minimum": 1
 		},
 		{
@@ -339,7 +332,7 @@
 			"description": "Font size for y-axis title",
 			"type": "text",
 			"value_type": "number",
-			"default_value": "14",
+			"default_value": "20",
 			"minimum": 1
 		},
 		{
@@ -350,7 +343,7 @@
 			"description": "Font size for x-axis tick labels",
 			"type": "text",
 			"value_type": "number",
-			"default_value": "14",
+			"default_value": "15",
 			"minimum": 1
 		},
 		{
@@ -402,8 +395,10 @@
 			"default_value": "percent gene hits per pathway",
 			"extra_data": [
 				"percent gene hits per pathway",
-				"number of hits",
-				"Fisher's Exact pval"
+				"Fisher's Exact pval",
+				"fdr corrected pval",
+				"enrichment score",
+				"number of hits"
 			]
 		},
 		{
@@ -418,7 +413,9 @@
 			"extra_data": [
 				"number of hits",
 				"percent gene hits per pathway",
-				"Fisher's Exact pval"
+				"enrichment score",
+				"Fisher's Exact pval",
+				"fdr corrected pval"
 			]
 		},
 		{
@@ -432,8 +429,10 @@
 			"default_value": "Fisher's Exact pval",
 			"extra_data": [
 				"Fisher's Exact pval",
+				"fdr corrected pval",
+				"percent gene hits per pathway",
 				"number of hits",
-				"percent gene hits per pathway"
+				"enrichment score"
 			]
 		},
 		{
@@ -448,8 +447,7 @@
 			"extra_data": [
 				"blues",
 				"reds",
-				"greens",
-				"purples"
+				"blue to red"
 			]
 		},
 		{
@@ -462,9 +460,15 @@
 			"value_type": "string",
 			"default_value": "GreentoBlue",
 			"extra_data": [
+				"Blue",
+				"Green",
+				"Orange",
+				"Grey",
+				"Red",
+				"Purple",
 				"GreentoBlue",
-				"RedtoBlue",
-				"YellowtoRed"
+				"OrangetoRed",
+				"YellowOrangeRed"
 			]
 		},
 		{
@@ -475,8 +479,8 @@
 			"description": "Plot width in inches",
 			"type": "text",
 			"value_type": "number",
-			"default_value": "14",
-			"minimum": 4
+			"default_value": "12",
+			"minimum": 0
 		},
 		{
 			"id": "NUurjXmNnJ835CCr",
@@ -486,8 +490,8 @@
 			"description": "Plot height in inches",
 			"type": "text",
 			"value_type": "number",
-			"default_value": "16",
-			"minimum": 4
+			"default_value": "12",
+			"minimum": 0
 		}
 	]
 }

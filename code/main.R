@@ -45,6 +45,7 @@ log_time <- function(step_name) {
 # Source the L2P function
 log_time("Script initialization")
 source("functions/L2P_Analysis.R")
+source("adapter_io.R")
 log_time("Loaded L2P_Analysis.R")
 
 # Load optparse for command-line argument parsing
@@ -53,8 +54,13 @@ log_time("Loaded optparse library")
 
 # Define command-line options (all function parameters exposed)
 option_list <- list(
+  # Canonical inputs. Code Ocean passes selected files as explicit paths; when
+  # deg_table is blank, adapter_io.R resolves exactly one candidate beneath
+  # the attached /data/deg_table mount.
+  make_option("--deg_table", type="character", default=NULL, help="DEG table (CSV, TSV, TXT, or RDS)"),
+  make_option("--custom_pathways", type="character", default=NULL, help="Optional: Path to custom pathway file"),
+
   # Basic settings
-  make_option("--deg_file", type="character", default=NULL, help="Input mode or uploaded DEG file (CSV, TSV, TXT, or RDS)"),
   make_option("--comparison", type="character", default=NULL, help="Comparison to analyze"),
   make_option("--comparisons", type="character", default=NULL, help="Comma-separated comparisons for independent batched runs"),
   make_option("--species", type="character", default="Mouse", help="Species [default %default]"),
@@ -80,8 +86,7 @@ option_list <- list(
   make_option("--use_built_in_gene_universe", type="character", default="FALSE", help="Use built-in gene universe [default %default]"),
   make_option("--use_fdr_p_values", type="character", default="FALSE", help="Use FDR p-values [default %default]"),
   
-  # Custom pathways
-  make_option("--custom_pathways", type="character", default=NULL, help="Optional: Path to custom pathway file"),
+  # Custom pathway columns
   make_option("--custom_pathway_name_column", type="character", default="gene_set_name", help="Pathway name column [default %default]"),
   make_option("--custom_pathway_gene_column", type="character", default="gene_symbol", help="Gene symbol column [default %default]"),
   
@@ -241,250 +246,23 @@ warn_gene_duplicates <- function(df, gene_col, file_label) {
   }
 }
 
-find_named_csv <- function(base_dir, filename, mode_label) {
-  all_csv <- list.files(
-    base_dir,
-    pattern = "\\.csv$",
-    full.names = TRUE,
-    recursive = TRUE,
-    ignore.case = TRUE
-  )
-  matches <- all_csv[tolower(basename(all_csv)) == tolower(filename)]
-  if (length(matches) == 0) {
-    cat(sprintf("\n=== ERROR: '%s' mode could not find '%s' ===\n", mode_label, filename))
-    # List available diff_*.csv files to help the user identify available comparisons
-    diff_files <- all_csv[grepl("^diff_.*\\.csv$", tolower(basename(all_csv)))]
-    filt_file  <- all_csv[tolower(basename(all_csv)) == "diff_filt.csv"]
-    if (length(diff_files) > 0 || length(filt_file) > 0) {
-      cat("  This looks like a MOSuite moo-properties dataset.\n")
-      if (length(diff_files) > 0) {
-        available <- sub("^diff_", "", sub("\\.csv$", "", basename(diff_files), ignore.case = TRUE),
-                         ignore.case = TRUE)
-        cat(sprintf("  Available comparisons: %s\n", paste(sort(available), collapse = ", ")))
-        cat("  Set the 'Comparison' parameter to one of the above.\n")
-      }
-    } else if (length(all_csv) == 0) {
-      all_files <- list.files(base_dir, full.names = TRUE, recursive = TRUE, all.files = FALSE)
-      if (length(all_files) == 0) {
-        cat("  No data found under /data/.\n")
-        cat("  For 'All DEG' mode: attach a MOSuite moo-properties dataset with mount name 'deg_table'.\n")
-        cat("  For standalone use: switch DEG Table File to 'Table' or blank and attach a flat CSV/RDS.\n")
-      } else {
-        cat(sprintf("  No CSV files found. %d file(s) present but none match diff_*.csv.\n",
-                    length(all_files)))
-      }
-    } else {
-      cat(sprintf("  Found %d CSV file(s) but none named '%s'.\n", length(all_csv), filename))
-      cat(sprintf("  Available: %s\n", paste(basename(head(all_csv, 5)), collapse = ", ")))
-    }
-    cat("\n")
-    stop(sprintf("'%s' mode could not find '%s'. See details above.", mode_label, filename))
-  }
-  if (length(matches) > 1) {
-    cat(sprintf("  Multiple '%s' files found; using: %s\n", filename, matches[1]))
-  }
-  matches[1]
+# Resolve the canonical DEG-table input. Explicit file selection wins. When it
+# is blank, discovery is confined to the declared /data/deg_table mount and
+# ambiguity is an error. For a single comparison, an exact diff_<comparison>
+# workflow result is deterministic even when sibling comparison files exist.
+resolved_deg <- resolve_deg_input(
+  deg_table = opt$deg_table,
+  data_root = "/data/deg_table",
+  comparison = if (is_batch) NULL else primary_comparison
+)
+deg_table_path <- resolved_deg$path
+cat(sprintf("Loading %s: %s\n", resolved_deg$source, deg_table_path))
+deg_data <- if (is_workflow_moo_path(deg_table_path)) {
+  load_workflow_moo_rds(deg_table_path)
+} else {
+  load_deg_file(deg_table_path)
 }
-
-first_existing_column <- function(candidates, available_cols) {
-  candidates <- candidates[!is.na(candidates) & nzchar(candidates)]
-  match <- candidates[candidates %in% available_cols]
-  if (length(match) > 0) {
-    return(match[1])
-  }
-  NULL
-}
-
-set_default_column_override <- function(param_name, candidates, mode_label) {
-  current_value <- opt[[param_name]]
-  if (!is.null(current_value) && nzchar(trimws(current_value))) {
-    return(invisible(NULL))
-  }
-
-  selected <- first_existing_column(candidates, colnames(deg_data))
-  if (!is.null(selected)) {
-    opt[[param_name]] <<- selected
-    cat(sprintf("  %s mode: using %s='%s'\n", mode_label, param_name, selected))
-  }
-}
-
-source("functions/workflow_input.R")
-
-# Priority 1: Check for uploaded file path. Code Ocean mode strings such as
-# "All DEG" and "Filtered DEG" are intentionally not treated as file paths.
-if (!is.null(opt$deg_file) && opt$deg_file != "" && file.exists(opt$deg_file)) {
-  deg_table_path <- opt$deg_file
-  cat(sprintf("Loading DEG table from uploaded file: %s\n", deg_table_path))
-  deg_data <- load_deg_file(deg_table_path)
-  log_time("Loaded uploaded DEG file")
-}
-
-# Priority 2: Use a DEG table from an upstream Code Ocean workflow capsule.
-# Workflow connections mount source results in an implementation-specific
-# subdirectory beneath /data, so search recursively by filename.
-if (is.null(deg_data)) {
-  workflow_csv_path <- find_workflow_csv()
-  workflow_moo_rds_path <- if (is.null(workflow_csv_path)) {
-    find_workflow_moo_rds()
-  } else {
-    NULL
-  }
-
-  if (!is.null(workflow_csv_path) || !is.null(workflow_moo_rds_path)) {
-    deg_table_path <- if (!is.null(workflow_csv_path)) {
-      workflow_csv_path
-    } else {
-      workflow_moo_rds_path
-    }
-    deg_data <- if (!is.null(workflow_csv_path)) {
-      load_flat_file(deg_table_path)
-    } else {
-      load_workflow_moo_rds(deg_table_path)
-    }
-    comp <- trimws(opt$comparison)
-    workflow_columns <- resolve_workflow_deg_columns(deg_data, comp)
-    opt$gene_names_column <- workflow_columns$gene_names_column
-    opt$t_statistic_column <- workflow_columns$t_statistic_column
-    opt$significance_column <- workflow_columns$significance_column
-    opt$fold_change_column <- workflow_columns$fold_change_column
-
-    cat(sprintf(
-      paste0(
-        "Loading workflow DEG table: %s\n",
-        "  Gene=%s; t-stat=%s; p-value=%s; FC=%s\n"
-      ),
-      deg_table_path,
-      opt$gene_names_column,
-      opt$t_statistic_column,
-      opt$significance_column,
-      opt$fold_change_column
-    ))
-    log_time(if (!is.null(workflow_csv_path)) {
-      "Loaded workflow CSV"
-    } else {
-      "Loaded workflow moo-diff.rds"
-    })
-  }
-}
-
-# Priority 3: Check selected data mode against attached data assets.
-if (is.null(deg_data)) {
-  deg_input_mode <- ""
-  if (!is.null(opt$deg_file) && nchar(trimws(opt$deg_file)) > 0) {
-    candidate <- trimws(opt$deg_file)
-    if (tolower(candidate) %in% c("filtered deg", "all deg", "table")) {
-      deg_input_mode <- tolower(candidate)
-      cat(sprintf("DEG Table File mode: '%s'\n", candidate))
-    }
-  }
-
-  csv_files <- list.files(
-    "/data/deg_table",
-    pattern = "\\.(csv|tsv|txt)$",
-    full.names = TRUE,
-    recursive = TRUE,
-    ignore.case = TRUE
-  )
-  rds_files <- list.files(
-    "/data/deg_table",
-    pattern = "\\.rds$",
-    full.names = TRUE,
-    recursive = TRUE,
-    ignore.case = TRUE
-  )
-
-  if (deg_input_mode == "filtered deg") {
-    cat("  Mode: Filtered DEG - searching for diff_filt.csv under /data\n")
-    deg_table_path <- find_named_csv("/data", "diff_filt.csv", "Filtered DEG")
-    deg_data <- load_flat_file(deg_table_path)
-    log_time("Loaded diff_filt.csv")
-
-  } else if (deg_input_mode == "all deg") {
-    if (is_batch) {
-      stop(
-        "ERROR: Batched Comparisons requires one wide DEG table with comparison-prefixed columns. ",
-        "Use a workflow DEG result or Table mode rather than All DEG mode."
-      )
-    }
-    if (is.null(opt$comparison) || !nzchar(trimws(opt$comparison))) {
-      stop("ERROR: 'All DEG' mode requires the 'Comparison' parameter.")
-    }
-    comp <- trimws(opt$comparison)
-    target <- paste0("diff_", comp, ".csv")
-    cat(sprintf("  Mode: All DEG - searching for %s under /data\n", target))
-    deg_table_path <- find_named_csv("/data", target, "All DEG")
-    deg_data <- load_flat_file(deg_table_path)
-    log_time(sprintf("Loaded %s", target))
-
-    set_default_column_override(
-      "gene_names_column",
-      c("GeneName", "Gene Symbols", "Gene", "gene", "symbol", "Symbol", "gene_name", "gene_symbol", "GeneSymbol"),
-      "All DEG"
-    )
-    set_default_column_override(
-      "t_statistic_column",
-      c("tstat", paste0(comp, "_tstat"), "t.stat", "t_stat", "stat"),
-      "All DEG"
-    )
-    set_default_column_override(
-      "significance_column",
-      c("pval", "adjpval", paste0(comp, "_pval"), paste0(comp, "_adjpval"), "padj", "FDR"),
-      "All DEG"
-    )
-    set_default_column_override(
-      "fold_change_column",
-      c("FC", "logFC", paste0(comp, "_FC"), paste0(comp, "_logFC"), "fc", "FoldChange"),
-      "All DEG"
-    )
-
-  } else {
-    if (deg_input_mode == "table") {
-      cat("  Mode: Table - auto-detecting flat DEG table in /data/deg_table\n")
-    } else {
-      cat("No uploaded file or explicit mode found. Looking for DEG table in /data/deg_table/...\n")
-      cat(sprintf(
-        "  Found %d flat file(s) [CSV/TSV/TXT] and %d RDS file(s)\n",
-        length(csv_files), length(rds_files)
-      ))
-    }
-
-    if (length(csv_files) == 1) {
-      deg_table_path <- csv_files[1]
-      cat(sprintf("Loading DEG table from flat file: %s\n", deg_table_path))
-      deg_data <- load_flat_file(deg_table_path)
-      log_time("Loaded flat file")
-    } else if (length(csv_files) > 1) {
-      comp <- trimws(opt$comparison)
-      scores <- sapply(csv_files, function(path) {
-        as.integer(grepl(comp, path, fixed = TRUE))
-      })
-      deg_table_path <- if (max(scores) > 0) {
-        csv_files[scores == max(scores)][1]
-      } else {
-        csv_files[1]
-      }
-      cat(sprintf("Multiple flat files found; loading: %s\n", deg_table_path))
-      deg_data <- load_flat_file(deg_table_path)
-      log_time("Loaded selected flat file")
-    } else if (length(rds_files) == 1) {
-      deg_table_path <- rds_files[1]
-      cat(sprintf("Loading DEG table from RDS file: %s\n", deg_table_path))
-      deg_data <- load_rds_as_df(deg_table_path)
-      log_time("Loaded RDS file")
-    } else if (length(rds_files) > 1) {
-      deg_table_path <- rds_files[1]
-      cat(sprintf("Multiple RDS files found; loading first: %s\n", deg_table_path))
-      deg_data <- load_rds_as_df(deg_table_path)
-      log_time("Loaded selected RDS file")
-    } else {
-      stop(paste0(
-        "ERROR: No DEG table found. Attach a flat table with mount name ",
-        "'deg_table', or use 'All DEG'/'Filtered DEG' with a MOSuite ",
-        "moo-properties asset."
-      ))
-    }
-  }
-}
+log_time("Loaded DEG input")
 
 # Verify we have a data frame
 if (!is.data.frame(deg_data)) {
@@ -618,26 +396,13 @@ if (!is.null(opt$significance_column) && opt$significance_column != "") {
   }
   cat(sprintf("Using user-specified significance column: '%s'\n", significance_column))
 } else {
-  # Try to auto-detect based on comparison
-  sig_candidates <- c(
-    "pval",
-    "adjpval",
-    "padj",
-    "FDR",
-    paste0(opt$comparison, "_pval"),
-    paste0(opt$comparison, "_adjpval"),
-    paste0(opt$comparison, "_padj"),
-    paste0(opt$comparison, "_pvalue"),
-    paste0(opt$comparison, "_p.value"),
-    paste0(opt$comparison, "_FDR")
+  # Prefer the requested comparison in a wide workflow table. Generic column
+  # names remain a deterministic fallback for narrow, single-contrast tables.
+  significance_column <- first_comparison_column(
+    opt$comparison,
+    c("_pval", "_adjpval", "_padj", "_pvalue", "_p.value", "_FDR"),
+    colnames(deg_data)
   )
-  significance_column <- NULL
-  for (col in sig_candidates) {
-    if (col %in% colnames(deg_data)) {
-      significance_column <- col
-      break
-    }
-  }
   
   if (!is.null(significance_column)) {
     cat(sprintf("Auto-detected significance column: '%s'\n", significance_column))
@@ -655,24 +420,13 @@ if (!is.null(opt$fold_change_column) && opt$fold_change_column != "") {
   }
   cat(sprintf("Using user-specified fold change column: '%s'\n", fold_change_column))
 } else {
-  # Try to auto-detect based on comparison
-  fc_candidates <- c(
-    "FC",
-    "logFC",
-    "fc",
-    "FoldChange",
-    paste0(opt$comparison, "_FC"),
-    paste0(opt$comparison, "_fc"),
-    paste0(opt$comparison, "_FoldChange"),
-    paste0(opt$comparison, "_logFC")
+  # Prefer the requested comparison in a wide workflow table. Generic column
+  # names remain a deterministic fallback for narrow, single-contrast tables.
+  fold_change_column <- first_comparison_column(
+    opt$comparison,
+    c("_FC", "_fc", "_FoldChange", "_logFC"),
+    colnames(deg_data)
   )
-  fold_change_column <- NULL
-  for (col in fc_candidates) {
-    if (col %in% colnames(deg_data)) {
-      fold_change_column <- col
-      break
-    }
-  }
   
   if (!is.null(fold_change_column)) {
     cat(sprintf("Auto-detected fold change column: '%s'\n", fold_change_column))
@@ -690,24 +444,13 @@ if (!is.null(opt$t_statistic_column) && opt$t_statistic_column != "") {
   }
   cat(sprintf("Using user-specified ranking column: '%s'\n", ranking_column))
 } else {
-  # Try to auto-detect based on comparison
-  rank_candidates <- c(
-    "tstat",
-    "t.stat",
-    "t_stat",
-    "stat",
-    paste0(opt$comparison, "_tstat"),
-    paste0(opt$comparison, "_t.stat"),
-    paste0(opt$comparison, "_t_stat"),
-    paste0(opt$comparison, "_stat")
+  # Prefer the requested comparison in a wide workflow table. Generic column
+  # names remain a deterministic fallback for narrow, single-contrast tables.
+  ranking_column <- first_comparison_column(
+    opt$comparison,
+    c("_tstat", "_t.stat", "_t_stat", "_stat"),
+    colnames(deg_data)
   )
-  ranking_column <- NULL
-  for (col in rank_candidates) {
-    if (col %in% colnames(deg_data)) {
-      ranking_column <- col
-      break
-    }
-  }
   
   if (!is.null(ranking_column)) {
     cat(sprintf("Auto-detected ranking column: '%s'\n", ranking_column))
@@ -723,25 +466,25 @@ custom_pathways_data <- NULL
 if (!is.null(opt$custom_pathways) && opt$custom_pathways != "") {
   cat("\n=== Loading custom pathway database ===\n")
   if (file.exists(opt$custom_pathways)) {
-    # Detect file type and read
-    file_ext <- tolower(tools::file_ext(opt$custom_pathways))
-    if (file_ext == "csv") {
-      custom_pathways_data <- read.csv(opt$custom_pathways, stringsAsFactors = FALSE, check.names = FALSE)
+    custom_pathways_data <- load_custom_pathways_file(opt$custom_pathways)
+    if (is.data.frame(custom_pathways_data)) {
+      cat(sprintf("Loaded custom pathways: %d rows\n", nrow(custom_pathways_data)))
+      cat(sprintf("Available columns: %s\n", paste(colnames(custom_pathways_data), collapse=", ")))
+
+      # Long-format tables require the two configured mapping columns. Native
+      # L2P pathway lists have already been structurally validated by the
+      # adapter loader and are passed through unchanged.
+      if (!(opt$custom_pathway_name_column %in% colnames(custom_pathways_data))) {
+        stop(sprintf("ERROR: Custom pathway name column '%s' not found in custom pathway file", opt$custom_pathway_name_column))
+      }
+      if (!(opt$custom_pathway_gene_column %in% colnames(custom_pathways_data))) {
+        stop(sprintf("ERROR: Custom pathway gene column '%s' not found in custom pathway file", opt$custom_pathway_gene_column))
+      }
+      cat(sprintf("Using pathway name column: '%s'\n", opt$custom_pathway_name_column))
+      cat(sprintf("Using gene symbol column: '%s'\n", opt$custom_pathway_gene_column))
     } else {
-      custom_pathways_data <- read.delim(opt$custom_pathways, stringsAsFactors = FALSE, check.names = FALSE)
+      cat(sprintf("Loaded custom pathways: %d L2P pathway-list entries\n", length(custom_pathways_data)))
     }
-    cat(sprintf("Loaded custom pathways: %d rows\n", nrow(custom_pathways_data)))
-    cat(sprintf("Available columns: %s\n", paste(colnames(custom_pathways_data), collapse=", ")))
-    
-    # Verify required columns exist
-    if (!(opt$custom_pathway_name_column %in% colnames(custom_pathways_data))) {
-      stop(sprintf("ERROR: Custom pathway name column '%s' not found in custom pathway file", opt$custom_pathway_name_column))
-    }
-    if (!(opt$custom_pathway_gene_column %in% colnames(custom_pathways_data))) {
-      stop(sprintf("ERROR: Custom pathway gene column '%s' not found in custom pathway file", opt$custom_pathway_gene_column))
-    }
-    cat(sprintf("Using pathway name column: '%s'\n", opt$custom_pathway_name_column))
-    cat(sprintf("Using gene symbol column: '%s'\n", opt$custom_pathway_gene_column))
   } else {
     stop(sprintf("ERROR: Custom pathway file not found: %s", opt$custom_pathways))
   }
