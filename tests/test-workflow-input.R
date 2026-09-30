@@ -5,6 +5,7 @@ if (length(script_arg) != 1L) {
   stop("Run this check with Rscript tests/test-workflow-input.R")
 }
 repo_root <- normalizePath(file.path(dirname(sub("^--file=", "", script_arg)), ".."))
+source(file.path(repo_root, "code", "functions", "L2P_Analysis.R"))
 source(file.path(repo_root, "code", "adapter_io.R"))
 
 expect_error <- function(expression, pattern) {
@@ -78,6 +79,99 @@ stopifnot(
   identical(narrow_columns$t_statistic_column, "tstat"),
   identical(narrow_columns$significance_column, "pval"),
   identical(narrow_columns$fold_change_column, "FC")
+)
+
+# Alternative suffixes are canonical user controls. They resolve both wide
+# comparison-prefixed columns and the equivalent generic narrow handoff.
+alternative_table <- data.frame(
+  GeneName = c("GeneA", "GeneB"),
+  `B-A_statistic` = c(1, -1),
+  `B-A_adjpval` = c(0.001, 0.002),
+  `B-A_logFC` = c(1.5, -1.5),
+  check.names = FALSE
+)
+alternative_columns <- resolve_workflow_deg_columns(
+  alternative_table,
+  "B-A",
+  t_statistic_suffix = "_statistic",
+  significance_suffix = "_adjpval",
+  fold_change_suffix = "_logFC"
+)
+stopifnot(
+  identical(alternative_columns$t_statistic_column, "B-A_statistic"),
+  identical(alternative_columns$significance_column, "B-A_adjpval"),
+  identical(alternative_columns$fold_change_column, "B-A_logFC")
+)
+
+alternative_narrow <- alternative_table
+names(alternative_narrow) <- c("GeneName", "statistic", "adjpval", "logFC")
+alternative_narrow_columns <- resolve_workflow_deg_columns(
+  alternative_narrow,
+  "B-A",
+  t_statistic_suffix = "_statistic",
+  significance_suffix = "_adjpval",
+  fold_change_suffix = "_logFC"
+)
+stopifnot(
+  identical(alternative_narrow_columns$t_statistic_column, "statistic"),
+  identical(alternative_narrow_columns$significance_column, "adjpval"),
+  identical(alternative_narrow_columns$fold_change_column, "logFC")
+)
+
+# Exact single-comparison overrides retain precedence over suffix-derived names.
+override_table <- alternative_table
+override_table$my_stat <- c(2, -2)
+override_table$my_p <- c(0.01, 0.02)
+override_table$my_fc <- c(2, -2)
+override_columns <- resolve_workflow_deg_columns(
+  override_table,
+  "B-A",
+  t_statistic_column = "my_stat",
+  significance_column = "my_p",
+  fold_change_column = "my_fc",
+  t_statistic_suffix = "_statistic",
+  significance_suffix = "_adjpval",
+  fold_change_suffix = "_logFC"
+)
+stopifnot(
+  identical(override_columns$t_statistic_column, "my_stat"),
+  identical(override_columns$significance_column, "my_p"),
+  identical(override_columns$fold_change_column, "my_fc")
+)
+
+# Blank comparison controls are resolved from table content only. One complete
+# prefix succeeds; multiple complete prefixes stop and list the candidates.
+stopifnot(identical(
+  resolve_l2p_comparisons(
+    column_names = colnames(alternative_table),
+    t_statistic_suffix = "_statistic",
+    significance_suffix = "_adjpval",
+    fold_change_suffix = "_logFC"
+  ),
+  "B-A"
+))
+ambiguous_table <- cbind(
+  alternative_table,
+  `C-A_adjpval` = c(0.03, 0.04),
+  `C-A_logFC` = c(1.2, -1.2)
+)
+expect_error(
+  resolve_l2p_comparisons(
+    column_names = colnames(ambiguous_table),
+    significance_suffix = "_adjpval",
+    fold_change_suffix = "_logFC"
+  ),
+  "Multiple comparison prefixes were detected: B-A, C-A"
+)
+expect_error(
+  resolve_l2p_comparisons(
+    comparison = "B-A",
+    comparisons = "C-A",
+    column_names = colnames(ambiguous_table),
+    significance_suffix = "_adjpval",
+    fold_change_suffix = "_logFC"
+  ),
+  "Supply either `--comparison` or `--comparisons`, not both"
 )
 
 gene_symbols_table <- read.csv(deg_path, check.names = FALSE)

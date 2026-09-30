@@ -71,6 +71,9 @@ option_list <- list(
   make_option("--t_statistic_column", type="character", default=NULL, help="Optional: Override ranking column"),
   make_option("--significance_column", type="character", default=NULL, help="Optional: Override significance column"),
   make_option("--fold_change_column", type="character", default=NULL, help="Optional: Override fold change column"),
+  make_option("--t_statistic_suffix", type="character", default="_tstat", help="Comparison ranking-column suffix [default %default]"),
+  make_option("--significance_suffix", type="character", default="_pval", help="Comparison significance-column suffix [default %default]"),
+  make_option("--fold_change_suffix", type="character", default="_FC", help="Comparison fold-change-column suffix [default %default]"),
   
   # Gene selection
   make_option("--select_by_rank", type="character", default="FALSE", help="Select by rank [default %default]"),
@@ -147,9 +150,10 @@ for (i in seq_along(filtered_args)) {
 opt <- parse_args(opt_parser, args = filtered_args)
 log_time("Parsed command-line arguments")
 
-# Resolve one comparison or an ordered batch. A batch expects a wide DEG table
-# with comparison-prefixed columns; fixed column overrides are necessarily
-# single-comparison settings and are rejected below.
+# Read the explicit controls before discovering the input. A nonblank single
+# comparison can select an exact diff_<comparison>.csv workflow result. Blank
+# controls remain blank until the table is loaded so the canonical resolver can
+# infer exactly one complete comparison prefix from its columns.
 comparison_raw <- opt[["comparison"]]
 if (is.null(comparison_raw)) {
   comparison_raw <- ""
@@ -163,27 +167,6 @@ batch_comparisons <- trimws(strsplit(as.character(comparisons_raw)[1L], ",", fix
 batch_comparisons <- batch_comparisons[nzchar(batch_comparisons)]
 if (nzchar(single_comparison) && length(batch_comparisons) > 0L) {
   stop("ERROR: Supply either 'Comparison' or 'Comparisons', not both.")
-}
-if (!nzchar(single_comparison) && length(batch_comparisons) == 0L) {
-  stop("ERROR: Specify a Comparison (for example, 'B-A') or a comma-separated Comparisons list.")
-}
-if (anyDuplicated(batch_comparisons)) {
-  stop("ERROR: 'Comparisons' must not contain duplicate comparison IDs.")
-}
-is_batch <- length(batch_comparisons) > 0L
-comparisons_to_run <- if (is_batch) batch_comparisons else single_comparison
-primary_comparison <- comparisons_to_run[[1L]]
-opt$comparison <- primary_comparison
-
-if (is_batch && any(vapply(
-  c("t_statistic_column", "significance_column", "fold_change_column"),
-  function(name) !is.null(opt[[name]]) && nzchar(trimws(opt[[name]])),
-  logical(1)
-))) {
-  stop(
-    "ERROR: Batched Comparisons uses automatic comparison-prefixed columns. ",
-    "Leave T-Statistic, Significance, and Fold Change column overrides blank."
-  )
 }
 
 # Find and read DEG table: uploaded file > selected data asset mode
@@ -253,7 +236,7 @@ warn_gene_duplicates <- function(df, gene_col, file_label) {
 resolved_deg <- resolve_deg_input(
   deg_table = opt$deg_table,
   data_root = "/data/deg_table",
-  comparison = if (is_batch) NULL else primary_comparison
+  comparison = if (nzchar(single_comparison)) single_comparison else NULL
 )
 deg_table_path <- resolved_deg$path
 cat(sprintf("Loading %s: %s\n", resolved_deg$source, deg_table_path))
@@ -274,6 +257,37 @@ if (!is.null(deg_table_path)) {
   cat(sprintf("Loaded DEG table path/mode: %s\n", deg_table_path))
 }
 cat(sprintf("Available columns: %s\n\n", paste(colnames(deg_data), collapse=", ")))
+
+# Convert the selection control before invoking the canonical comparison
+# resolver. Exact list indexing avoids R's partial matching of `comparison`
+# against the plural `comparisons` option.
+select_by_rank <- as.logical(opt$select_by_rank)
+if (is.na(select_by_rank)) {
+  stop("ERROR: Select By Rank must be TRUE or FALSE.")
+}
+comparisons_to_run <- resolve_l2p_comparisons(
+  comparison = opt[["comparison"]],
+  comparisons = opt[["comparisons"]],
+  column_names = colnames(deg_data),
+  select_by_rank = select_by_rank,
+  t_statistic_suffix = opt$t_statistic_suffix,
+  significance_suffix = opt$significance_suffix,
+  fold_change_suffix = opt$fold_change_suffix
+)
+is_batch <- length(comparisons_to_run) > 1L
+primary_comparison <- comparisons_to_run[[1L]]
+opt$comparison <- primary_comparison
+
+if (is_batch && any(vapply(
+  c("t_statistic_column", "significance_column", "fold_change_column"),
+  function(name) !is.null(opt[[name]]) && nzchar(trimws(opt[[name]])),
+  logical(1)
+))) {
+  stop(
+    "ERROR: Batched Comparisons uses automatic comparison-prefixed columns. ",
+    "Leave T-Statistic, Significance, and Fold Change column overrides blank."
+  )
+}
 
 warn_gene_duplicates(
   deg_data,
@@ -311,7 +325,7 @@ if (!msigdb_version_detected) {
 cat("======================================\n\n")
 
 # Convert string boolean parameters to logical
-opt$select_by_rank <- as.logical(opt$select_by_rank)
+opt$select_by_rank <- select_by_rank
 opt$select_top_percentage_of_genes <- as.logical(opt$select_top_percentage_of_genes)
 opt$use_built_in_gene_universe <- as.logical(opt$use_built_in_gene_universe)
 opt$use_fdr_p_values <- as.logical(opt$use_fdr_p_values)
@@ -387,78 +401,6 @@ if (!is.null(opt$gene_names_column) && opt$gene_names_column != "") {
   }
 }
 
-# Handle significance column (or use user override)
-if (!is.null(opt$significance_column) && opt$significance_column != "") {
-  significance_column <- opt$significance_column
-  if (!(significance_column %in% colnames(deg_data))) {
-    stop(sprintf("ERROR: Specified significance column '%s' not found in data.\nAvailable columns: %s", 
-                 significance_column, paste(colnames(deg_data), collapse=", ")))
-  }
-  cat(sprintf("Using user-specified significance column: '%s'\n", significance_column))
-} else {
-  # Prefer the requested comparison in a wide workflow table. Generic column
-  # names remain a deterministic fallback for narrow, single-contrast tables.
-  significance_column <- first_comparison_column(
-    opt$comparison,
-    c("_pval", "_adjpval", "_padj", "_pvalue", "_p.value", "_FDR"),
-    colnames(deg_data)
-  )
-  
-  if (!is.null(significance_column)) {
-    cat(sprintf("Auto-detected significance column: '%s'\n", significance_column))
-  } else {
-    cat("Note: Could not auto-detect significance column. Function will handle internally.\n")
-  }
-}
-
-# Handle fold change column (or use user override)
-if (!is.null(opt$fold_change_column) && opt$fold_change_column != "") {
-  fold_change_column <- opt$fold_change_column
-  if (!(fold_change_column %in% colnames(deg_data))) {
-    stop(sprintf("ERROR: Specified fold change column '%s' not found in data.\nAvailable columns: %s", 
-                 fold_change_column, paste(colnames(deg_data), collapse=", ")))
-  }
-  cat(sprintf("Using user-specified fold change column: '%s'\n", fold_change_column))
-} else {
-  # Prefer the requested comparison in a wide workflow table. Generic column
-  # names remain a deterministic fallback for narrow, single-contrast tables.
-  fold_change_column <- first_comparison_column(
-    opt$comparison,
-    c("_FC", "_fc", "_FoldChange", "_logFC"),
-    colnames(deg_data)
-  )
-  
-  if (!is.null(fold_change_column)) {
-    cat(sprintf("Auto-detected fold change column: '%s'\n", fold_change_column))
-  } else {
-    cat("Note: Could not auto-detect fold change column. Function will handle internally.\n")
-  }
-}
-
-# Handle ranking column (or use user override)
-if (!is.null(opt$t_statistic_column) && opt$t_statistic_column != "") {
-  ranking_column <- opt$t_statistic_column
-  if (!(ranking_column %in% colnames(deg_data))) {
-    stop(sprintf("ERROR: Specified ranking column '%s' not found in data.\nAvailable columns: %s", 
-                 ranking_column, paste(colnames(deg_data), collapse=", ")))
-  }
-  cat(sprintf("Using user-specified ranking column: '%s'\n", ranking_column))
-} else {
-  # Prefer the requested comparison in a wide workflow table. Generic column
-  # names remain a deterministic fallback for narrow, single-contrast tables.
-  ranking_column <- first_comparison_column(
-    opt$comparison,
-    c("_tstat", "_t.stat", "_t_stat", "_stat"),
-    colnames(deg_data)
-  )
-  
-  if (!is.null(ranking_column)) {
-    cat(sprintf("Auto-detected ranking column: '%s'\n", ranking_column))
-  } else {
-    cat("Note: Could not auto-detect ranking column. Function will handle internally.\n")
-  }
-}
-
 log_time("Completed column detection and parameter setup")
 
 # Handle custom pathways if provided
@@ -504,13 +446,29 @@ for (i in seq_along(comparisons_to_run)) {
   export_plot <- file.path(comparison_dir, "l2p_plots.png")
   export_results <- file.path(comparison_dir, "l2p_results.csv")
 
+  # Canonical suffix resolution is authoritative. The adapter adds only one
+  # narrow translation: a per-comparison workflow file may use generic columns
+  # such as tstat, pval, and FC when it contains no prefixed comparison pair.
+  comparison_columns <- resolve_workflow_deg_columns(
+    df = deg_data,
+    comparison = comparison,
+    gene_names_column = gene_names_column,
+    t_statistic_column = if (is_batch) NULL else opt$t_statistic_column,
+    significance_column = if (is_batch) NULL else opt$significance_column,
+    fold_change_column = if (is_batch) NULL else opt$fold_change_column,
+    t_statistic_suffix = opt$t_statistic_suffix,
+    significance_suffix = opt$significance_suffix,
+    fold_change_suffix = opt$fold_change_suffix,
+    select_by_rank = opt$select_by_rank
+  )
+
   cat(sprintf("Running L2P for comparison: %s\n", comparison))
   results <- l2p_single(
     deg_table = deg_data,
     gene_names_column = gene_names_column,
-    t_statistic_column = if (is_batch) NULL else ranking_column,
-    significance_column = if (is_batch) NULL else significance_column,
-    fold_change_column = if (is_batch) NULL else fold_change_column,
+    t_statistic_column = comparison_columns$t_statistic_column,
+    significance_column = comparison_columns$significance_column,
+    fold_change_column = comparison_columns$fold_change_column,
     comparison = comparison,
     plot_title_prefix = if (is_batch) comparison else NULL,
     species = opt$species,

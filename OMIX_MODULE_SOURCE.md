@@ -4,10 +4,10 @@
 
 - **Module:** [OMIX L2P Single](https://github.com/NIDAP-Community/OMIX/tree/main/modules/OMIX-L2P-Single)
 - **Canonical path:** `modules/OMIX-L2P-Single/`
-- **Canonical module version:** `3.1.0`
+- **Canonical module version:** `3.2.0`
 - **Canonical interface version:** `1`
 - **Canonical release tag:** Pending — baseline tag not yet established.
-- **Canonical source reference:** [`eee4433cd74d0ce9bd1daba1571ca6312cba7ea2`](https://github.com/NIDAP-Community/OMIX/commit/eee4433cd74d0ce9bd1daba1571ca6312cba7ea2)
+- **Canonical source reference:** [`5caab82a6dc89c20a30f4cf3826618620b1daf0f`](https://github.com/NIDAP-Community/OMIX/commit/5caab82a6dc89c20a30f4cf3826618620b1daf0f)
 - **Interface schema:** [schemas/interface.yml](https://github.com/NIDAP-Community/OMIX/blob/main/modules/OMIX-L2P-Single/schemas/interface.yml)
 - **Module contract:** [OMIX module contract](https://github.com/NIDAP-Community/OMIX/blob/main/docs/module-contract.md)
 
@@ -15,12 +15,12 @@
 
 | Canonical file | Adapter copy | SHA-256 | Purpose |
 | --- | --- | --- | --- |
-| `R/L2P_Analysis.R` | `code/functions/L2P_Analysis.R` | `c963f5c4168f7bb425d14b4ea0a00270bcff0818ee5b1e7d341b4209bff385bf` | Single-comparison L2P implementation. |
+| `R/L2P_Analysis.R` | `code/functions/L2P_Analysis.R` | `f24c57751dcbda394cdf222bdf46892b6f463f98fb678d07234e921fa0c02054` | Single-comparison L2P implementation. |
 
 The listed export was verified byte-for-byte against the canonical source
 reference above. The canonical `schemas/interface.yml` reviewed for the App
 Panel and adapter contract has SHA-256
-`ffbbb20d3cfa384a4b1c09610110520e1d8b62ed55d0046c251156edcdb98628`.
+`ff40848d376cdf9b5bb406a478a689b7398387752e8f0e2efbfb1595f4f2a1e0`.
 
 ## Platform translations
 
@@ -31,12 +31,20 @@ Panel and adapter contract has SHA-256
   candidates are an error rather than an implicit first-file choice.
 - Canonical internal `output_dir` is platform-managed as `/results` and is not
   exposed in the App Panel.
+- The App Panel presets `comparison` to `B-A` for the attached mouse
+  demonstration table and leaves `comparisons` blank. The adapter CLI retains
+  the canonical blank defaults, so another table may infer a comparison only
+  when exactly one complete prefix exists for the configured suffixes.
 - The App Panel and adapter CLI default `species` to `Mouse` because the
   attached mouse demonstration dataset is the deployment's default input. The
   canonical portable CLI retains its `Human` default.
-- All other 38 public or advanced controls retain their canonical names,
-  types, choices, order, and defaults. There are no deprecated public controls
-  or scientific aliases.
+- Per-comparison workflow tables may translate configured prefixed column
+  names to their generic narrow equivalents (for example, `B-A_pval` to
+  `pval`) only when no complete prefixed comparison is present. Wide-table
+  selection and exact-column precedence remain canonical.
+- Every public or advanced control is exposed. Other than the documented
+  `comparison` and `species` demonstration presets, controls retain their
+  canonical names, types, choices, order, and defaults.
 
 ## Adapter release record
 
@@ -45,7 +53,7 @@ Panel and adapter contract has SHA-256
 | Adapter version | Pending — baseline tag not yet established. |
 | Adapter release tag | Pending. |
 | Platform release | Pending validation record. |
-| Runtime tag | `codeocean/omix-r-pathway:r4.4.3-bioconductor3.20-v1` (from `.codeocean/environment.json`). |
+| Runtime tag | `codeocean/omix-r-pathway:r4.4.3-bioconductor3.20-v2` (from `.codeocean/environment.json`). |
 | Runtime digest | Pending — no immutable digest has been validated or recorded. |
 | Named-parameter platform run | Pending — GitHub/local checks are not Code Ocean validation. |
 | Syncweaver lock | Pending — no generated `.syncweaver-lock.json` is recorded. |

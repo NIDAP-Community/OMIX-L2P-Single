@@ -31,10 +31,13 @@ Abl1        -3.45       0.002       0.6
 ```
 
 ### 2. Comparison
-**Which contrast to analyze** (REQUIRED)
-- Specify the comparison identifier (e.g., `B-A`, `Treatment-Control`, `KO-WT`)
+**Which contrast to analyze**
+- The mouse demonstration preset is `B-A`
+- For your own table, specify the comparison identifier (e.g., `B-A`, `Treatment-Control`, `KO-WT`)
 - Must match the prefix in your column names
 - Example: If your columns are `B-A_tstat`, `B-A_pval`, enter `B-A`
+- Alternatively, clear both comparison controls only when the table has exactly
+  one complete prefix. Several detected prefixes require an explicit choice.
 
 ### 3. Species
 **Select your organism** (default: Mouse)
@@ -229,6 +232,13 @@ If automatic column detection doesn't work for your data:
 - **Ranking Column**: Override the auto-detected `{comparison}_tstat` column
 - **Significance Column**: Override the auto-detected `{comparison}_pval` column
 - **Fold Change Column**: Override the auto-detected `{comparison}_FC` column
+- **T-Statistic Suffix** (default `_tstat`): Change the repeated ranking suffix
+- **Significance Suffix** (default `_pval`): For example, use `_adjpval`
+- **Fold Change Suffix** (default `_FC`): For example, use `_logFC`
+
+Exact single-comparison column overrides take precedence over suffixes. For an
+ordered multi-comparison run, leave exact column overrides blank and use the
+suffix controls consistently across comparisons.
 
 ### Gene Selection
 Control which genes are included:
