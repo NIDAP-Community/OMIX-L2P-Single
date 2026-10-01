@@ -260,10 +260,13 @@ Multi-panel figure with:
 
 This adapter uses the pinned Code Ocean runtime `OMIX Pathways v2`. The exact
 canonical module commit, exported scientific-file hash, runtime tag, and
-pending platform-validation fields are recorded in
-[OMIX_MODULE_SOURCE.md](OMIX_MODULE_SOURCE.md). Record the selected input asset
-and effective parameter values with any scientific result. Local and GitHub
-checks do not replace a representative Code Ocean run.
+platform-validation state are recorded in
+[OMIX_MODULE_SOURCE.md](OMIX_MODULE_SOURCE.md). The successful computation
+currently on record is described in
+[docs/code-ocean-validation.md](docs/code-ocean-validation.md); its unresolved
+runtime digest and release fields remain explicitly pending. Record the
+selected input asset and effective parameter values with any scientific result.
+Local and GitHub checks do not replace representative Code Ocean validation.
 
 ## References
 
