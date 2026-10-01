@@ -8,6 +8,9 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
 ## [Unreleased]
 
 ### Added
+- A partial Code Ocean validation record for successful computation `814293`
+  on the merged v3.2.0 adapter. The runtime digest, platform release identifier,
+  and durable output checklist remain pending and no release is claimed.
 - Canonical OMIX L2P Single v3.2.0 comparison-suffix controls for ranking,
   significance, and fold-change columns, exposed in both the adapter CLI and
   App Panel.

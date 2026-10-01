@@ -193,8 +193,10 @@ def audit(panel, main_text, source_text):
         findings.append("canonical schema SHA-256 is absent from the source record")
     if "Runtime digest | Pending" not in source_text:
         findings.append("runtime digest is not recorded honestly as pending")
-    if "Named-parameter platform run | Pending" not in source_text:
-        findings.append("Code Ocean validation is not recorded honestly as pending")
+    if "Code Ocean computation `814293` completed successfully" not in source_text:
+        findings.append("the partial Code Ocean validation record is missing")
+    if "durable output checklist remain pending" not in source_text:
+        findings.append("remaining Code Ocean validation limits are not recorded")
     if "mouse demonstration" not in source_text.lower():
         findings.append("Mouse demo default exception is not documented")
     if "`comparison` to `B-A`" not in source_text:

@@ -55,10 +55,14 @@ Panel and adapter contract has SHA-256
 | Platform release | Pending validation record. |
 | Runtime tag | `codeocean/omix-r-pathway:r4.4.3-bioconductor3.20-v2` (from `.codeocean/environment.json`). |
 | Runtime digest | Pending — no immutable digest has been validated or recorded. |
-| Named-parameter platform run | Pending — GitHub/local checks are not Code Ocean validation. |
+| Named-parameter platform run | Code Ocean computation `814293` completed successfully on 2026-09-30 against merged adapter commit `b6683811bbc37140a1f26e89c59c361947a9876c` using `OMIX Pathways v2`. The immutable runtime digest, platform release identifier, and durable output checklist remain pending. |
 | Syncweaver lock | Pending — no generated `.syncweaver-lock.json` is recorded. |
 
-See the [OMIX versioning and release policy](https://github.com/NIDAP-Community/OMIX/blob/main/docs/versioning-and-releases.md). The source commit, adapter tag, platform release, and runtime identity are separate records.
+See the [Code Ocean validation record](docs/code-ocean-validation.md) and the
+[OMIX versioning and release policy](https://github.com/NIDAP-Community/OMIX/blob/main/docs/versioning-and-releases.md).
+The completed computation is partial platform evidence, not a release: the
+source commit, adapter tag, platform release, and immutable runtime identity
+remain separate records.
 
 ## Adapter-only support code
 
