@@ -212,6 +212,46 @@ dir.create(empty_root)
 on.exit(unlink(empty_root, recursive = TRUE), add = TRUE)
 expect_error(resolve_deg_input(data_root = empty_root), "No supported DEG table")
 
+# A direct Code Ocean result edge mounts Limma's complete output bundle at
+# /data, not at the optional deg_table asset mount. The adapter may use only
+# the stable Limma_Analysis.csv filename; sibling CSV artifacts remain ignored.
+limma_root <- tempfile("l2p-limma-result-")
+dir.create(limma_root)
+on.exit(unlink(limma_root, recursive = TRUE), add = TRUE)
+limma_path <- file.path(limma_root, "Limma_Analysis.csv")
+file.copy(deg_path, limma_path)
+write.csv(data.frame(Sample = "sample-1"), file.path(limma_root, "Sample_Metadata.csv"), row.names = FALSE)
+write.csv(data.frame(Mean = 1), file.path(limma_root, "Variance_Diagnostic.csv"), row.names = FALSE)
+resolved_limma <- resolve_deg_input(
+  data_root = empty_root,
+  workflow_root = limma_root,
+  comparison = "B-A"
+)
+stopifnot(
+  identical(resolved_limma$path, normalizePath(limma_path)),
+  identical(resolved_limma$source, "Limma workflow result")
+)
+
+# Duplicate result names remain an actionable ambiguity rather than selecting
+# the first recursively discovered workflow output.
+dir.create(file.path(limma_root, "second-result"))
+file.copy(deg_path, file.path(limma_root, "second-result", "Limma_Analysis.csv"))
+expect_error(
+  resolve_deg_input(data_root = empty_root, workflow_root = limma_root),
+  "Multiple Limma workflow results named 'Limma_Analysis.csv'"
+)
+
+# Generic workflow bundles remain strict: a CSV with another name cannot be
+# mistaken for a Limma differential result.
+non_limma_root <- tempfile("l2p-non-limma-result-")
+dir.create(non_limma_root)
+on.exit(unlink(non_limma_root, recursive = TRUE), add = TRUE)
+file.copy(deg_path, file.path(non_limma_root, "Other_Analysis.csv"))
+expect_error(
+  resolve_deg_input(data_root = empty_root, workflow_root = non_limma_root),
+  "No supported DEG table"
+)
+
 unsupported <- file.path(workflow_dir, "not-a-table.pdf")
 writeLines("test", unsupported)
 expect_error(resolve_deg_input(deg_table = unsupported), "must be CSV, TSV, TXT, or RDS")

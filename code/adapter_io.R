@@ -87,6 +87,7 @@ load_custom_pathways_file <- function(path) {
 resolve_deg_input <- function(
   deg_table = NULL,
   data_root = "/data/deg_table",
+  workflow_root = "/data",
   comparison = NULL
 ) {
   explicit <- if (is.null(deg_table)) "" else trimws(as.character(deg_table)[1L])
@@ -108,9 +109,30 @@ resolve_deg_input <- function(
 
   candidates <- .l2p_supported_deg_files(data_root)
   if (length(candidates) == 0L) {
+    # Code Ocean result-to-capsule edges mount the producer's result bundle at
+    # /data rather than at the optional deg_table asset mount. Only recognize
+    # Limma's stable result filename here; never choose an arbitrary CSV from
+    # the generic bundle.
+    workflow_candidates <- .l2p_supported_deg_files(workflow_root)
+    limma_candidates <- workflow_candidates[
+      tolower(basename(workflow_candidates)) == "limma_analysis.csv"
+    ]
+    limma_result <- .l2p_choose_unique(
+      limma_candidates,
+      "Limma workflow results named 'Limma_Analysis.csv'",
+      workflow_root
+    )
+    if (!is.null(limma_result)) {
+      return(list(
+        path = limma_result,
+        source = "Limma workflow result"
+      ))
+    }
+
     stop(
       "ERROR: No supported DEG table was found under ", data_root,
-      ". Attach the DEG input with mount name 'deg_table' or select a file explicitly."
+      ". Attach the DEG input with mount name 'deg_table', select a file explicitly, ",
+      "or connect an OMIX Limma result containing Limma_Analysis.csv."
     )
   }
 

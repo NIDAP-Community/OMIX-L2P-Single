@@ -8,6 +8,10 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
 ## [Unreleased]
 
 ### Added
+- A deterministic adapter-only handoff for direct OMIX Limma workflow edges:
+  when no `deg_table` asset is mounted, exactly one `Limma_Analysis.csv` under
+  the Code Ocean result bundle is accepted. Arbitrary generic CSV files remain
+  rejected.
 - A partial Code Ocean validation record for successful computation `814293`
   on the merged v3.2.0 adapter. The runtime digest, platform release identifier,
   and durable output checklist remain pending and no release is claimed.
