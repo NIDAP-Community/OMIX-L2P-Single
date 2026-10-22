@@ -55,8 +55,9 @@ log_time("Loaded optparse library")
 # Define command-line options (all function parameters exposed)
 option_list <- list(
   # Canonical inputs. Code Ocean passes selected files as explicit paths; when
-  # deg_table is blank, adapter_io.R resolves exactly one candidate beneath
-  # the attached /data/deg_table mount.
+  # deg_table is blank, adapter_io.R first resolves exactly one candidate
+  # beneath the attached /data/deg_table mount, then permits the stable
+  # Limma_Analysis.csv file from a direct Limma result edge.
   make_option("--deg_table", type="character", default=NULL, help="DEG table (CSV, TSV, TXT, or RDS)"),
   make_option("--custom_pathways", type="character", default=NULL, help="Optional: Path to custom pathway file"),
 
@@ -230,9 +231,11 @@ warn_gene_duplicates <- function(df, gene_col, file_label) {
 }
 
 # Resolve the canonical DEG-table input. Explicit file selection wins. When it
-# is blank, discovery is confined to the declared /data/deg_table mount and
-# ambiguity is an error. For a single comparison, an exact diff_<comparison>
-# workflow result is deterministic even when sibling comparison files exist.
+# is blank, discovery first uses the declared /data/deg_table mount and
+# ambiguity is an error. A direct Limma workflow edge is the sole deterministic
+# fallback: Code Ocean mounts its stable Limma_Analysis.csv result under /data.
+# For a single comparison, an exact diff_<comparison> workflow result is also
+# deterministic even when sibling comparison files exist.
 resolved_deg <- resolve_deg_input(
   deg_table = opt$deg_table,
   data_root = "/data/deg_table",

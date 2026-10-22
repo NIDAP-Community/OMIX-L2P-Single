@@ -16,7 +16,8 @@ deployment adapter.
 ## What this deployment adds
 
 - The Code Ocean App Panel and capsule entry point.
-- Uploaded and attached single-comparison DEG-table discovery under `/data`.
+- Uploaded and attached single-comparison DEG-table discovery, plus the
+  deterministic direct handoff from an OMIX Limma workflow result.
 - Capsule outputs under `/results` and the pinned runtime configuration.
 
 The attached demonstration dataset is from mouse and its example contrast is
@@ -55,6 +56,12 @@ unambiguous DEG candidate. For a single **Comparison**, an exact
 `diff_<comparison>.csv` is selected deterministically even when sibling
 comparison files are present. Any other multiple-candidate case stops and
 lists the paths instead of silently choosing the first file.
+
+For a direct Code Ocean edge from **OMIX Limma Analysis**, no extra data asset
+is needed: Code Ocean mounts the result bundle under `/data`, and this adapter
+accepts only its stable `Limma_Analysis.csv` file. It ignores sibling
+`Sample_Metadata.csv` and `Variance_Diagnostic.csv` files and never guesses
+among arbitrary CSV files in a workflow bundle.
 
 The selected data source should contain differential expression results with:
 
