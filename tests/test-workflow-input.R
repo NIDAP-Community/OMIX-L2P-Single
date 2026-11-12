@@ -212,9 +212,10 @@ dir.create(empty_root)
 on.exit(unlink(empty_root, recursive = TRUE), add = TRUE)
 expect_error(resolve_deg_input(data_root = empty_root), "No supported DEG table")
 
-# A direct Code Ocean result edge mounts Limma's complete output bundle at
-# /data, not at the optional deg_table asset mount. The adapter may use only
-# the stable Limma_Analysis.csv filename; sibling CSV artifacts remain ignored.
+# A direct Code Ocean result edge mounts a producer's complete output bundle at
+# /data, not at the optional deg_table asset mount. The adapter accepts only
+# stable result filenames from supported producers; sibling CSV artifacts
+# remain ignored.
 limma_root <- tempfile("l2p-limma-result-")
 dir.create(limma_root)
 on.exit(unlink(limma_root, recursive = TRUE), add = TRUE)
@@ -229,20 +230,42 @@ resolved_limma <- resolve_deg_input(
 )
 stopifnot(
   identical(resolved_limma$path, normalizePath(limma_path)),
-  identical(resolved_limma$source, "Limma workflow result")
+  identical(resolved_limma$source, "OMIX Limma workflow result")
 )
 
-# Duplicate result names remain an actionable ambiguity rather than selecting
-# the first recursively discovered workflow output.
-dir.create(file.path(limma_root, "second-result"))
-file.copy(deg_path, file.path(limma_root, "second-result", "Limma_Analysis.csv"))
+# OMIX DEG Analysis uses its own stable result filename. Its workflow result
+# must be accepted without requiring a separately mounted deg_table asset.
+omix_deg_root <- tempfile("l2p-omix-deg-result-")
+dir.create(omix_deg_root)
+on.exit(unlink(omix_deg_root, recursive = TRUE), add = TRUE)
+omix_deg_path <- file.path(omix_deg_root, "DEG_Analysis.csv")
+file.copy(deg_path, omix_deg_path)
+write.csv(data.frame(Sample = "sample-1"), file.path(omix_deg_root, "Sample_Metadata.csv"), row.names = FALSE)
+writeLines("adapter-owned provenance", file.path(omix_deg_root, "run_summary.txt"))
+resolved_omix_deg <- resolve_deg_input(
+  data_root = empty_root,
+  workflow_root = omix_deg_root,
+  comparison = "B-A"
+)
+stopifnot(
+  identical(resolved_omix_deg$path, normalizePath(omix_deg_path)),
+  identical(resolved_omix_deg$source, "OMIX DEG Analysis workflow result")
+)
+
+# Multiple supported workflow results remain an actionable ambiguity rather
+# than selecting the first recursively discovered producer output.
+ambiguous_workflow_root <- tempfile("l2p-ambiguous-workflow-result-")
+dir.create(ambiguous_workflow_root)
+on.exit(unlink(ambiguous_workflow_root, recursive = TRUE), add = TRUE)
+file.copy(deg_path, file.path(ambiguous_workflow_root, "Limma_Analysis.csv"))
+file.copy(deg_path, file.path(ambiguous_workflow_root, "DEG_Analysis.csv"))
 expect_error(
-  resolve_deg_input(data_root = empty_root, workflow_root = limma_root),
-  "Multiple Limma workflow results named 'Limma_Analysis.csv'"
+  resolve_deg_input(data_root = empty_root, workflow_root = ambiguous_workflow_root),
+  "Multiple supported workflow results"
 )
 
 # Generic workflow bundles remain strict: a CSV with another name cannot be
-# mistaken for a Limma differential result.
+# mistaken for a supported differential result.
 non_limma_root <- tempfile("l2p-non-limma-result-")
 dir.create(non_limma_root)
 on.exit(unlink(non_limma_root, recursive = TRUE), add = TRUE)

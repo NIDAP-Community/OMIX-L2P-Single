@@ -3,7 +3,7 @@
 	"named_parameters": true,
 	"general": {
 		"title": "L2P Analysis (Single)",
-		"instructions": "Attach one DEG input with mount name 'deg_table' to replace the mouse demo. Leave DEG Table File blank to discover the input only within that mount, or select a CSV, TSV, TXT, or RDS file explicitly. Discovery accepts one unambiguous DEG table; for a single Comparison, an exact diff_<comparison>.csv file is selected deterministically. Ambiguous files stop with their paths instead of choosing one silently.\n\nThe mouse demo preset runs B-A. For another table, use either Comparison for one analysis or Comparisons for ordered, independent runs. You may leave both blank only when the table contains exactly one complete comparison prefix using the configured suffixes; several detected prefixes stop for an explicit choice. Threshold selection (nominal p-value ≤ 0.05 and absolute fold change ≥ 1.2) is the default. Essential controls are under Main Settings; expand the Advanced categories to tune column detection, selection, pathway filtering, custom pathways, or plot appearance."
+		"instructions": "Attach one DEG input with mount name 'deg_table' to replace the mouse demo, or connect one OMIX Limma Analysis or OMIX DEG Analysis result directly in a workflow. Leave DEG Table File blank to discover the attached mount or the stable Limma_Analysis.csv or DEG_Analysis.csv workflow result; select a CSV, TSV, TXT, or RDS file explicitly for another source. Discovery accepts one unambiguous DEG table; for a single Comparison, an exact diff_<comparison>.csv file is selected deterministically. Ambiguous files stop with their paths instead of choosing one silently.\n\nThe mouse demo preset runs B-A. For another table, use either Comparison for one analysis or Comparisons for ordered, independent runs. You may leave both blank only when the table contains exactly one complete comparison prefix using the configured suffixes; several detected prefixes stop for an explicit choice. Threshold selection (nominal p-value ≤ 0.05 and absolute fold change ≥ 1.2) is the default. Essential controls are under Main Settings; expand the Advanced categories to tune column detection, selection, pathway filtering, custom pathways, or plot appearance."
 	},
 	"datasets": [
 		{
@@ -50,7 +50,7 @@
 			"category": "basic",
 			"name": "DEG Table File",
 			"param_name": "deg_table",
-			"description": "Optional explicit CSV, TSV, TXT, or RDS differential-expression table. Leave blank to discover the input only within the attached data asset mounted as deg_table; ambiguous candidates are rejected.",
+			"description": "Optional explicit CSV, TSV, TXT, or RDS differential-expression table. Leave blank to discover one unambiguous table in the attached deg_table mount or a stable OMIX Limma Analysis or OMIX DEG Analysis workflow result; ambiguous candidates are rejected.",
 			"type": "file",
 			"value_type": "string"
 		},

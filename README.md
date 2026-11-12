@@ -17,7 +17,8 @@ deployment adapter.
 
 - The Code Ocean App Panel and capsule entry point.
 - Uploaded and attached single-comparison DEG-table discovery, plus the
-  deterministic direct handoff from an OMIX Limma workflow result.
+  deterministic direct handoff from OMIX Limma Analysis and OMIX DEG Analysis
+  workflow results.
 - Capsule outputs under `/results` and the pinned runtime configuration.
 
 The attached demonstration dataset is from mouse and its example contrast is
@@ -57,11 +58,13 @@ unambiguous DEG candidate. For a single **Comparison**, an exact
 comparison files are present. Any other multiple-candidate case stops and
 lists the paths instead of silently choosing the first file.
 
-For a direct Code Ocean edge from **OMIX Limma Analysis**, no extra data asset
-is needed: Code Ocean mounts the result bundle under `/data`, and this adapter
-accepts only its stable `Limma_Analysis.csv` file. It ignores sibling
-`Sample_Metadata.csv` and `Variance_Diagnostic.csv` files and never guesses
-among arbitrary CSV files in a workflow bundle.
+For a direct Code Ocean edge from **OMIX Limma Analysis** or **OMIX DEG
+Analysis**, no extra data asset is needed: Code Ocean mounts the result bundle
+under `/data`, and this adapter accepts only the stable `Limma_Analysis.csv`
+or `DEG_Analysis.csv` result, respectively. It ignores sibling metadata,
+diagnostic, provenance, and package-inventory files and never guesses among
+arbitrary CSV files in a workflow bundle. Connecting more than one supported
+producer result is rejected as ambiguous; use one direct edge per L2P run.
 
 The selected data source should contain differential expression results with:
 
@@ -93,7 +96,8 @@ demo keeps `Comparison=B-A` so its default run is deterministic.
 
 ### Quick Start (Beginners)
 
-1. **Attach your DEG table** as a data asset
+1. **Attach your DEG table** as a data asset, or connect one supported OMIX
+   Limma Analysis or OMIX DEG Analysis result directly in a workflow
 2. **Fill in Main Settings**:
    - **DEG Table File**: leave blank to use the attached `deg_table` asset, or select one file explicitly
    - **Comparison**: keep the demo preset `B-A`, replace it with your prefix, or clear it only when your table has one unambiguous prefix; use **Comparisons** for an ordered batch from a wide table

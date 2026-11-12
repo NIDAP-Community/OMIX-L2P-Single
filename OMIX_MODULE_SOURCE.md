@@ -30,10 +30,11 @@ Panel and adapter contract has SHA-256
   table, or an exact `diff_<comparison>.csv` for a single comparison; multiple
   candidates are an error rather than an implicit first-file choice.
 - When the optional `deg_table` mount is empty, the adapter additionally
-  recognizes exactly one `Limma_Analysis.csv` in the generic `/data` bundle
-  supplied by a direct OMIX Limma workflow-result edge. This is a Code Ocean
-  path translation, not a canonical input-contract change; other generic CSV
-  files remain ineligible.
+  recognizes exactly one `Limma_Analysis.csv` or `DEG_Analysis.csv` in the
+  generic `/data` bundle supplied by a direct OMIX Limma Analysis or OMIX DEG
+  Analysis workflow-result edge, respectively. This is a Code Ocean path
+  translation, not a canonical input-contract change; other generic CSV files
+  remain ineligible, and multiple supported producer results are rejected.
 - Canonical internal `output_dir` is platform-managed as `/results` and is not
   exposed in the App Panel.
 - The App Panel presets `comparison` to `B-A` for the attached mouse
@@ -71,9 +72,10 @@ remain separate records.
 
 ## Adapter-only support code
 
-`code/adapter_io.R` resolves Code Ocean inputs, the direct Limma-result
-handoff, and the optional legacy MOSuite `moo-diff.rds` workflow handoff. It
-is platform support code and is not part of the canonical `R/` export.
+`code/adapter_io.R` resolves Code Ocean inputs, direct Limma and OMIX DEG
+result handoffs, and the optional legacy MOSuite `moo-diff.rds` workflow
+handoff. It is platform support code and is not part of the canonical `R/`
+export.
 
 ## Ownership and synchronization
 

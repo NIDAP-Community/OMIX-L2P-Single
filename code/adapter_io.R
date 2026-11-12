@@ -110,29 +110,35 @@ resolve_deg_input <- function(
   candidates <- .l2p_supported_deg_files(data_root)
   if (length(candidates) == 0L) {
     # Code Ocean result-to-capsule edges mount the producer's result bundle at
-    # /data rather than at the optional deg_table asset mount. Only recognize
-    # Limma's stable result filename here; never choose an arbitrary CSV from
-    # the generic bundle.
+    # /data rather than at the optional deg_table asset mount. Recognize only
+    # the stable result filenames from supported DEG-producing capsules; never
+    # choose an arbitrary CSV from the generic bundle.
     workflow_candidates <- .l2p_supported_deg_files(workflow_root)
-    limma_candidates <- workflow_candidates[
-      tolower(basename(workflow_candidates)) == "limma_analysis.csv"
+    workflow_sources <- c(
+      "limma_analysis.csv" = "OMIX Limma workflow result",
+      "deg_analysis.csv" = "OMIX DEG Analysis workflow result"
+    )
+    workflow_basenames <- tolower(basename(workflow_candidates))
+    supported_workflow_candidates <- workflow_candidates[
+      workflow_basenames %in% names(workflow_sources)
     ]
-    limma_result <- .l2p_choose_unique(
-      limma_candidates,
-      "Limma workflow results named 'Limma_Analysis.csv'",
+    workflow_result <- .l2p_choose_unique(
+      supported_workflow_candidates,
+      "supported workflow results named 'Limma_Analysis.csv' or 'DEG_Analysis.csv'",
       workflow_root
     )
-    if (!is.null(limma_result)) {
+    if (!is.null(workflow_result)) {
       return(list(
-        path = limma_result,
-        source = "Limma workflow result"
+        path = workflow_result,
+        source = unname(workflow_sources[[tolower(basename(workflow_result))]])
       ))
     }
 
     stop(
       "ERROR: No supported DEG table was found under ", data_root,
       ". Attach the DEG input with mount name 'deg_table', select a file explicitly, ",
-      "or connect an OMIX Limma result containing Limma_Analysis.csv."
+      "or connect an OMIX Limma result containing Limma_Analysis.csv or an ",
+      "OMIX DEG Analysis result containing DEG_Analysis.csv."
     )
   }
 
