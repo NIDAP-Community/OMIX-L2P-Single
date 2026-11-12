@@ -232,8 +232,9 @@ warn_gene_duplicates <- function(df, gene_col, file_label) {
 
 # Resolve the canonical DEG-table input. Explicit file selection wins. When it
 # is blank, discovery first uses the declared /data/deg_table mount and
-# ambiguity is an error. A direct Limma workflow edge is the sole deterministic
-# fallback: Code Ocean mounts its stable Limma_Analysis.csv result under /data.
+# ambiguity is an error. Direct OMIX Limma Analysis and OMIX DEG Analysis
+# workflow edges are deterministic fallbacks: Code Ocean mounts their stable
+# Limma_Analysis.csv or DEG_Analysis.csv result under /data.
 # For a single comparison, an exact diff_<comparison> workflow result is also
 # deterministic even when sibling comparison files exist.
 resolved_deg <- resolve_deg_input(
