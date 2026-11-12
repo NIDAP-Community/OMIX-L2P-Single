@@ -130,7 +130,7 @@ batch.
 
 **Threshold-based (default)**
 - Filters by nominal p-value and fold change cutoffs
-- Default thresholds: p ≤ 0.05 and absolute fold change ≥ 1.2
+- Default thresholds: p < 0.05 and absolute fold change ≥ 1.2
 
 **Rank-based (optional)**
 - Selects top N% or top N genes by t-statistic

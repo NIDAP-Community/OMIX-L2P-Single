@@ -245,7 +245,7 @@ Control which genes are included:
 - **Select by rank** (default: FALSE): Use top-ranked genes instead of the default significance and fold-change thresholds
 - **Select top percentage** (default: TRUE): Select top % of genes vs. fixed number
 - **Select top genes** (default: 500): Number of top genes when not using percentage
-- **Significance threshold** (default: 0.05): P-value cutoff when selecting by significance
+- **Significance threshold** (default: 0.05): Strict p-value cutoff when selecting by significance; values must be below the threshold
 - **Fold change threshold** (default: 1.2): FC cutoff when selecting by significance
 - **Minimum DEG genes** (default: 50): Minimum genes required to proceed
 

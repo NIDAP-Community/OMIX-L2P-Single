@@ -80,7 +80,7 @@ option_list <- list(
   make_option("--select_by_rank", type="character", default="FALSE", help="Select by rank [default %default]"),
   make_option("--select_top_percentage_of_genes", type="character", default="TRUE", help="Select top percentage [default %default]"),
   make_option("--select_top_genes", type="integer", default=500, help="Number of top genes [default %default]"),
-  make_option("--significance_threshold", type="double", default=0.05, help="Significance threshold [default %default]"),
+  make_option("--significance_threshold", type="double", default=0.05, help="Strict significance threshold; values must be below it [default %default]"),
   make_option("--fold_change_threshold", type="double", default=1.2, help="Fold change threshold [default %default]"),
   make_option("--minimum_number_of_deg_genes", type="integer", default=50, help="Minimum DEG genes [default %default]"),
   

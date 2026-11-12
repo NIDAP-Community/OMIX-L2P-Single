@@ -218,7 +218,7 @@
 			"category": "gene_selection",
 			"name": "Significance Threshold",
 			"param_name": "significance_threshold",
-			"description": "P-value threshold for gene selection (if not using rank)",
+			"description": "Strict p-value cutoff for gene selection (if not using rank); values must be below the threshold",
 			"type": "text",
 			"value_type": "number",
 			"default_value": "0.05",
