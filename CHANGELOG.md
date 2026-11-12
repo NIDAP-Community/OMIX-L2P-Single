@@ -7,6 +7,13 @@ Version numbers correspond to Code Ocean capsule release versions (integers: v1,
 
 ## [Unreleased]
 
+### Changed
+- Synced the canonical OMIX L2P Single 4.0.0 scientific export at
+  `1ad19eddb38ec7db3d072c87fc2620e68793181e`. Threshold-mode gene selection
+  now requires p-values strictly below `significance_threshold`; a p-value
+  exactly equal to the threshold is excluded. This adapter update has not yet
+  been validated or released in Code Ocean.
+
 ### Added
 - Deterministic adapter-only handoffs for direct OMIX Limma Analysis and OMIX
   DEG Analysis workflow edges: when no `deg_table` asset is mounted, exactly

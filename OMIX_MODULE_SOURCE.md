@@ -4,10 +4,10 @@
 
 - **Module:** [OMIX L2P Single](https://github.com/NIDAP-Community/OMIX/tree/main/modules/OMIX-L2P-Single)
 - **Canonical path:** `modules/OMIX-L2P-Single/`
-- **Canonical module version:** `3.2.0`
+- **Canonical module version:** `4.0.0`
 - **Canonical interface version:** `1`
 - **Canonical release tag:** Pending — baseline tag not yet established.
-- **Canonical source reference:** [`5caab82a6dc89c20a30f4cf3826618620b1daf0f`](https://github.com/NIDAP-Community/OMIX/commit/5caab82a6dc89c20a30f4cf3826618620b1daf0f)
+- **Canonical source reference:** [`1ad19eddb38ec7db3d072c87fc2620e68793181e`](https://github.com/NIDAP-Community/OMIX/commit/1ad19eddb38ec7db3d072c87fc2620e68793181e)
 - **Interface schema:** [schemas/interface.yml](https://github.com/NIDAP-Community/OMIX/blob/main/modules/OMIX-L2P-Single/schemas/interface.yml)
 - **Module contract:** [OMIX module contract](https://github.com/NIDAP-Community/OMIX/blob/main/docs/module-contract.md)
 
@@ -15,12 +15,12 @@
 
 | Canonical file | Adapter copy | SHA-256 | Purpose |
 | --- | --- | --- | --- |
-| `R/L2P_Analysis.R` | `code/functions/L2P_Analysis.R` | `f24c57751dcbda394cdf222bdf46892b6f463f98fb678d07234e921fa0c02054` | Single-comparison L2P implementation. |
+| `R/L2P_Analysis.R` | `code/functions/L2P_Analysis.R` | `5e59ffeb8f89a28bee7d4be616189a99c56c505418d1fbda4c8e190aa3e48fac` | Single-comparison L2P implementation. |
 
 The listed export was verified byte-for-byte against the canonical source
 reference above. The canonical `schemas/interface.yml` reviewed for the App
 Panel and adapter contract has SHA-256
-`ff40848d376cdf9b5bb406a478a689b7398387752e8f0e2efbfb1595f4f2a1e0`.
+`cf0f3112e23a47357043e535ac411f59e9ee1610c71a906fb8cd1da35fd5c57e`.
 
 ## Platform translations
 
