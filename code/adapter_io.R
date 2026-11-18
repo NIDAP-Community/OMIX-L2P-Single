@@ -110,9 +110,10 @@ resolve_deg_input <- function(
   candidates <- .l2p_supported_deg_files(data_root)
   if (length(candidates) == 0L) {
     # Code Ocean result-to-capsule edges mount the producer's result bundle at
-    # /data rather than at the optional deg_table asset mount. Recognize only
-    # the stable result filenames from supported DEG-producing capsules; never
-    # choose an arbitrary CSV from the generic bundle.
+    # /data rather than at the optional deg_table asset mount. Stable producer
+    # filenames are recognized directly; other DEG outputs are eligible only
+    # when their supported table filename contains "deg". Never choose an
+    # arbitrary CSV from the generic bundle.
     workflow_candidates <- .l2p_supported_deg_files(workflow_root)
     workflow_sources <- c(
       "limma_analysis.csv" = "OMIX Limma workflow result",
@@ -120,25 +121,30 @@ resolve_deg_input <- function(
     )
     workflow_basenames <- tolower(basename(workflow_candidates))
     supported_workflow_candidates <- workflow_candidates[
-      workflow_basenames %in% names(workflow_sources)
+      workflow_basenames %in% names(workflow_sources) |
+        grepl("deg", workflow_basenames, fixed = TRUE)
     ]
     workflow_result <- .l2p_choose_unique(
       supported_workflow_candidates,
-      "supported workflow results named 'Limma_Analysis.csv' or 'DEG_Analysis.csv'",
+      "supported workflow results with a stable producer name or a filename containing 'deg'",
       workflow_root
     )
     if (!is.null(workflow_result)) {
+      result_basename <- tolower(basename(workflow_result))
       return(list(
         path = workflow_result,
-        source = unname(workflow_sources[[tolower(basename(workflow_result))]])
+        source = if (result_basename %in% names(workflow_sources)) {
+          unname(workflow_sources[[result_basename]])
+        } else {
+          "DEG-named workflow result"
+        }
       ))
     }
 
     stop(
       "ERROR: No supported DEG table was found under ", data_root,
       ". Attach the DEG input with mount name 'deg_table', select a file explicitly, ",
-      "or connect an OMIX Limma result containing Limma_Analysis.csv or an ",
-      "OMIX DEG Analysis result containing DEG_Analysis.csv."
+      "or provide exactly one supported table beneath /data whose filename contains 'deg'."
     )
   }
 
