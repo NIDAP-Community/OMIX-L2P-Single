@@ -252,6 +252,29 @@ stopifnot(
   identical(resolved_omix_deg$source, "OMIX DEG Analysis workflow result")
 )
 
+# A FindMarkers-style result can have a producer-specific filename. It is
+# automatically discovered below the generic /data workflow root when exactly
+# one supported table filename contains "deg"; unrelated files remain ignored.
+findmarkers_root <- tempfile("l2p-findmarkers-result-")
+dir.create(file.path(findmarkers_root, "result-id"), recursive = TRUE)
+on.exit(unlink(findmarkers_root, recursive = TRUE), add = TRUE)
+findmarkers_path <- file.path(
+  findmarkers_root,
+  "result-id",
+  "deg_gene_expression_markers.csv"
+)
+file.copy(deg_path, findmarkers_path)
+writeLines("FindMarkers run log", file.path(findmarkers_root, "result-id", "output_1"))
+resolved_findmarkers <- resolve_deg_input(
+  data_root = empty_root,
+  workflow_root = findmarkers_root,
+  comparison = "B-A"
+)
+stopifnot(
+  identical(resolved_findmarkers$path, normalizePath(findmarkers_path)),
+  identical(resolved_findmarkers$source, "DEG-named workflow result")
+)
+
 # Multiple supported workflow results remain an actionable ambiguity rather
 # than selecting the first recursively discovered producer output.
 ambiguous_workflow_root <- tempfile("l2p-ambiguous-workflow-result-")

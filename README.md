@@ -58,13 +58,14 @@ unambiguous DEG candidate. For a single **Comparison**, an exact
 comparison files are present. Any other multiple-candidate case stops and
 lists the paths instead of silently choosing the first file.
 
-For a direct Code Ocean edge from **OMIX Limma Analysis** or **OMIX DEG
-Analysis**, no extra data asset is needed: Code Ocean mounts the result bundle
-under `/data`, and this adapter accepts only the stable `Limma_Analysis.csv`
-or `DEG_Analysis.csv` result, respectively. It ignores sibling metadata,
-diagnostic, provenance, and package-inventory files and never guesses among
-arbitrary CSV files in a workflow bundle. Connecting more than one supported
-producer result is rejected as ambiguous; use one direct edge per L2P run.
+For a direct Code Ocean workflow edge, no extra data asset is needed: Code
+Ocean mounts the result bundle under `/data`. The adapter accepts a stable
+`Limma_Analysis.csv` or `DEG_Analysis.csv` producer output, or exactly one
+supported CSV, TSV, TXT, or RDS table whose filename contains `deg`
+(case-insensitive), such as `deg_gene_expression_markers.csv`. It ignores
+sibling metadata, diagnostic, provenance, and package-inventory files and
+never guesses among multiple eligible tables. If more than one matches, select
+the intended file explicitly.
 
 The selected data source should contain differential expression results with:
 
